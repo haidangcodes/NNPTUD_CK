@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Portal API</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; padding: 40px; }
+        .container { max-width: 800px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 40px; }
+        h1 { color: #333; margin-bottom: 10px; }
+        .subtitle { color: #666; margin-bottom: 30px; }
+        h2 { color: #444; margin: 25px 0 15px; border-bottom: 2px solid #007bff; padding-bottom: 8px; }
+        .endpoint { background: #f8f9fa; border-radius: 6px; padding: 12px 16px; margin: 8px 0; font-family: monospace; font-size: 14px; }
+        .method { display: inline-block; padding: 3px 8px; border-radius: 4px; font-weight: bold; margin-right: 10px; }
+        .get { background: #28a745; color: white; }
+        .post { background: #007bff; color: white; }
+        .put { background: #ffc107; color: #333; }
+        .delete { background: #dc3545; color: white; }
+        .note { background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 15px; margin: 20px 0; }
+        .note strong { color: #856404; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Job Portal API</h1>
+        <p class="subtitle">Node.js + Express + MongoDB RESTful API</p>
+
+        <h2>Authentication</h2>
+        <div class="endpoint"><span class="method post">POST</span>/api/auth/register - Register new account</div>
+        <div class="endpoint"><span class="method post">POST</span>/api/auth/login - Login and get JWT token</div>
+
+        <h2>Profiles (Candidate)</h2>
+        <div class="endpoint"><span class="method get">GET</span>/api/profiles/me - Get my profile</div>
+        <div class="endpoint"><span class="method put">PUT</span>/api/profiles/me - Update my profile</div>
+
+        <h2>Companies</h2>
+        <div class="endpoint"><span class="method get">GET</span>/api/companies - List all companies</div>
+        <div class="endpoint"><span class="method get">GET</span>/api/companies/:id - Get company by ID</div>
+        <div class="endpoint"><span class="method post">POST</span>/api/companies/me - Create company profile</div>
+        <div class="endpoint"><span class="method put">PUT</span>/api/companies/me - Update my company</div>
+        <div class="endpoint"><span class="method put">PUT</span>/api/companies/:id/approve - Approve company (Admin)</div>
+
+        <h2>Categories (Admin)</h2>
+        <div class="endpoint"><span class="method get">GET</span>/api/categories - List all categories</div>
+        <div class="endpoint"><span class="method post">POST</span>/api/categories - Create category</div>
+        <div class="endpoint"><span class="method put">PUT</span>/api/categories/:id - Update category</div>
+        <div class="endpoint"><span class="method delete">DELETE</span>/api/categories/:id - Delete category</div>
+
+        <h2>Jobs</h2>
+        <div class="endpoint"><span class="method get">GET</span>/api/jobs - List jobs (with pagination)</div>
+        <div class="endpoint"><span class="method get">GET</span>/api/jobs/:id - Get job details</div>
+        <div class="endpoint"><span class="method post">POST</span>/api/jobs - Create job (Recruiter)</div>
+        <div class="endpoint"><span class="method put">PUT</span>/api/jobs/:id - Update job</div>
+        <div class="endpoint"><span class="method delete">DELETE</span>/api/jobs/:id - Delete job</div>
+
+        <h2>Applications</h2>
+        <div class="endpoint"><span class="method post">POST</span>/api/applications - Apply to job</div>
+        <div class="endpoint"><span class="method get">GET</span>/api/applications/me - My applications</div>
+        <div class="endpoint"><span class="method get">GET</span>/api/applications/job/:jobId - Applications for a job</div>
+        <div class="endpoint"><span class="method put">PUT</span>/api/applications/:id/status - Update status</div>
+
+        <h2>Interviews</h2>
+        <div class="endpoint"><span class="method post">POST</span>/api/interviews - Schedule interview</div>
+        <div class="endpoint"><span class="method get">GET</span>/api/interviews/me - My interviews</div>
+        <div class="endpoint"><span class="method put">PUT</span>/api/interviews/:id - Update interview</div>
+        <div class="endpoint"><span class="method delete">DELETE</span>/api/interviews/:id - Cancel interview</div>
+
+        <h2>Blogs (Admin)</h2>
+        <div class="endpoint"><span class="method get">GET</span>/api/blogs - List blogs</div>
+        <div class="endpoint"><span class="method get">GET</span>/api/blogs/:id - Get blog</div>
+        <div class="endpoint"><span class="method post">POST</span>/api/blogs - Create blog</div>
+        <div class="endpoint"><span class="method put">PUT</span>/api/blogs/:id - Update blog</div>
+        <div class="endpoint"><span class="method delete">DELETE</span>/api/blogs/:id - Delete blog</div>
+
+        <h2>Upload</h2>
+        <div class="endpoint"><span class="method post">POST</span>/api/upload/cv - Upload CV (PDF)</div>
+        <div class="endpoint"><span class="method post">POST</span>/api/upload/image - Upload image (JPG/PNG)</div>
+
+        <div class="note">
+            <strong>Note:</strong> Include header <code>Authorization: Bearer &lt;token&gt;</code> for protected routes.
+        </div>
+    </div>
+</body>
+</html>
