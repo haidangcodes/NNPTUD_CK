@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const API_URL = 'http://localhost:3000/api';
+const BACKEND_URL = 'http://localhost:3000';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -8,6 +9,16 @@ const api = axios.create({
     'Content-Type': 'application/json'
   }
 });
+
+// Helper to get full URL for uploaded files
+export const getFullUrl = (path) => {
+  if (!path) return '';
+  if (path.startsWith('http')) return path;
+  if (path.startsWith('/uploads')) return `${BACKEND_URL}${path}`;
+  // Handle relative paths
+  if (!path.startsWith('/')) return `${BACKEND_URL}/${path}`;
+  return `${BACKEND_URL}${path}`;
+};
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');

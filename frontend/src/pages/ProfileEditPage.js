@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { profileService, uploadService } from '../services/api';
+import { getFullUrl } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 const ProfileEditPage = () => {
@@ -8,17 +9,24 @@ const ProfileEditPage = () => {
   const { user } = useAuth();
   const fileInputRef = useRef(null);
 
-  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingCV, setUploadingCV] = useState(false);
   const [toast, setToast] = useState(null);
 
   const [formData, setFormData] = useState({
-    fullName: '',
-    phone: '',
-    address: '',
-    skills: '',
+    hoVaTen: '',
+    ngaySinh: '',
+    gioiTinh: '',
+    diaChi: '',
+    tinhThanh: '',
+    soDienThoai: '',
+    gioiThieuBanThan: '',
+    kyNang: '',
+    kinhNghiemLamViec: '',
+    hocVan: '',
+    ngoaiNgu: '',
+    chungChi: '',
     cvUrl: ''
   });
 
@@ -30,12 +38,19 @@ const ProfileEditPage = () => {
     try {
       const res = await profileService.getMe();
       const data = res.data.data;
-      setProfile(data);
       setFormData({
-        fullName: data.fullName || '',
-        phone: data.phone || '',
-        address: data.address || '',
-        skills: Array.isArray(data.skills) ? data.skills.join(', ') : (data.skills || ''),
+        hoVaTen: data.hoVaTen || '',
+        ngaySinh: data.ngaySinh || '',
+        gioiTinh: data.gioiTinh || '',
+        diaChi: data.diaChi || '',
+        tinhThanh: data.tinhThanh || '',
+        soDienThoai: data.soDienThoai || '',
+        gioiThieuBanThan: data.gioiThieuBanThan || '',
+        kyNang: Array.isArray(data.kyNang) ? data.kyNang.join(', ') : (data.kyNang || ''),
+        kinhNghiemLamViec: data.kinhNghiemLamViec || '',
+        hocVan: data.hocVan || '',
+        ngoaiNgu: data.ngoaiNgu || '',
+        chungChi: data.chungChi || '',
         cvUrl: data.cvUrl || ''
       });
     } catch (err) {
@@ -61,10 +76,10 @@ const ProfileEditPage = () => {
     try {
       setUploadingCV(true);
       const res = await uploadService.uploadCV(file);
-      setFormData({ ...formData, cvUrl: res.data.data.cvUrl });
-      showToast('CV uploaded successfully');
+      setFormData({ ...formData, cvUrl: res.data.data.url });
+      showToast('Đã tải lên CV thành công');
     } catch (err) {
-      showToast(err.response?.data?.message || 'Upload failed', 'error');
+      showToast(err.response?.data?.message || 'Tải lên thất bại', 'error');
     } finally {
       setUploadingCV(false);
     }
@@ -76,177 +91,291 @@ const ProfileEditPage = () => {
       setSaving(true);
       const data = {
         ...formData,
-        skills: formData.skills.split(',').map(s => s.trim()).filter(Boolean)
+        kyNang: formData.kyNang.split(',').map(s => s.trim()).filter(Boolean)
       };
       await profileService.updateMe(data);
-      showToast('Profile updated successfully');
+      showToast('Đã cập nhật hồ sơ');
       setTimeout(() => navigate('/dashboard/candidate'), 1500);
     } catch (err) {
-      showToast(err.response?.data?.message || 'Update failed', 'error');
+      showToast(err.response?.data?.message || 'Cập nhật thất bại', 'error');
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  if (loading) return <div className="loading">Đang tải...</div>;
 
   return (
-    <div className="profile-edit-page min-h-screen bg-stone-50">
+    <div className="dashboard">
       {toast && (
-        <div className={`fixed top-4 right-4 z-50 px-6 py-3 rounded-xl shadow-lg ${
-          toast.type === 'error' ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'
-        }`}>
+        <div style={{
+          position: 'fixed',
+          top: 100,
+          right: 24,
+          zIndex: 1000,
+          padding: '14px 24px',
+          borderRadius: 12,
+          boxShadow: 'var(--shadow-lg)',
+          background: toast.type === 'error' ? 'var(--error)' : 'var(--success)',
+          color: 'white',
+          fontWeight: 600
+        }}>
           {toast.message}
         </div>
       )}
 
-      <div className="max-w-2xl mx-auto px-6 py-12">
+      <div className="container" style={{ padding: '48px 32px', maxWidth: 640 }}>
         <button
           onClick={() => navigate(-1)}
-          className="inline-flex items-center gap-2 text-stone-500 hover:text-amber-600 transition-colors mb-8"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 8,
+            color: 'var(--text-secondary)',
+            marginBottom: 24,
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: '0.95rem',
+            fontWeight: 500,
+            padding: 0
+          }}
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-          Back
+          Quay lại
         </button>
 
-        <div className="bg-white rounded-3xl shadow-sm border border-stone-100 overflow-hidden">
-          <div className="bg-gradient-to-r from-amber-500 to-orange-500 px-8 py-6">
-            <div className="flex items-center gap-4">
-              <div className="w-20 h-20 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center text-3xl font-bold text-white">
-                {formData.fullName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-white">Edit Profile</h1>
-                <p className="text-white/80">{user?.email}</p>
-              </div>
+        <div style={{ borderRadius: 24, overflow: 'hidden', boxShadow: 'var(--shadow-md)' }}>
+          <div style={{
+            background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%)',
+            padding: '32px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 20
+          }}>
+            <div style={{
+              width: 72,
+              height: 72,
+              borderRadius: 18,
+              background: 'rgba(255,255,255,0.2)',
+              backdropFilter: 'blur(10px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '2rem',
+              fontWeight: 700,
+              color: 'white'
+            }}>
+              {formData.hoVaTen?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
+            </div>
+            <div>
+              <h1 style={{ color: 'white', fontSize: '1.6rem', marginBottom: 4 }}>Chỉnh sửa hồ sơ</h1>
+              <p style={{ color: 'rgba(255,255,255,0.8)' }}>{user?.email}</p>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-8 space-y-6">
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-stone-700">Full Name</label>
+          <form onSubmit={handleSubmit} style={{ padding: 32, background: 'var(--bg-card)' }}>
+            <div className="form-group">
+              <label>Họ và tên</label>
               <input
                 type="text"
-                name="fullName"
-                value={formData.fullName}
+                name="hoVaTen"
+                value={formData.hoVaTen}
                 onChange={handleChange}
-                className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
-                placeholder="Enter your full name"
+                placeholder="Nhập họ và tên đầy đủ"
               />
             </div>
 
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-stone-700">Phone</label>
+            <div className="grid-2">
+              <div className="form-group">
+                <label>Ngày sinh</label>
+                <input
+                  type="date"
+                  name="ngaySinh"
+                  value={formData.ngaySinh}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="form-group">
+                <label>Giới tính</label>
+                <select name="gioiTinh" value={formData.gioiTinh} onChange={handleChange}>
+                  <option value="">Chọn</option>
+                  <option value="NAM">Nam</option>
+                  <option value="NU">Nữ</option>
+                  <option value="KHAC">Khác</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label>Số điện thoại</label>
               <input
                 type="tel"
-                name="phone"
-                value={formData.phone}
+                name="soDienThoai"
+                value={formData.soDienThoai}
                 onChange={handleChange}
-                className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
                 placeholder="+84 xxx xxx xxx"
               />
             </div>
 
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-stone-700">Address</label>
+            <div className="form-group">
+              <label>Địa chỉ</label>
               <input
                 type="text"
-                name="address"
-                value={formData.address}
+                name="diaChi"
+                value={formData.diaChi}
                 onChange={handleChange}
-                className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
-                placeholder="Your address"
+                placeholder="Địa chỉ của bạn"
               />
             </div>
 
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-stone-700">Skills</label>
+            <div className="form-group">
+              <label>Tỉnh/Thành</label>
               <input
                 type="text"
-                name="skills"
-                value={formData.skills}
+                name="tinhThanh"
+                value={formData.tinhThanh}
                 onChange={handleChange}
-                className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
-                placeholder="JavaScript, React, Node.js (comma separated)"
+                placeholder="VD: Hồ Chí Minh"
               />
-              <p className="text-xs text-stone-400 mt-1">Separate skills with commas</p>
             </div>
 
-            <div className="space-y-3">
-              <label className="block text-sm font-medium text-stone-700">CV / Resume</label>
-              <div className="flex items-center gap-4">
+            <div className="form-group">
+              <label>Giới thiệu bản thân</label>
+              <textarea
+                name="gioiThieuBanThan"
+                value={formData.gioiThieuBanThan}
+                onChange={handleChange}
+                rows={3}
+                placeholder="Viết vài dòng giới thiệu về bản thân..."
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Kỹ năng</label>
+              <input
+                type="text"
+                name="kyNang"
+                value={formData.kyNang}
+                onChange={handleChange}
+                placeholder="JavaScript, React, Node.js (phân cách bằng dấu phẩy)"
+              />
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: 6 }}>
+                Phân cách các kỹ năng bằng dấu phẩy
+              </p>
+            </div>
+
+            <div className="form-group">
+              <label>Kinh nghiệm làm việc</label>
+              <textarea
+                name="kinhNghiemLamViec"
+                value={formData.kinhNghiemLamViec}
+                onChange={handleChange}
+                rows={3}
+                placeholder="Mô tả kinh nghiệm làm việc..."
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Học vấn</label>
+              <textarea
+                name="hocVan"
+                value={formData.hocVan}
+                onChange={handleChange}
+                rows={2}
+                placeholder="Trình độ học vấn..."
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Ngoại ngữ</label>
+              <input
+                type="text"
+                name="ngoaiNgu"
+                value={formData.ngoaiNgu}
+                onChange={handleChange}
+                placeholder="VD: English - IELTS 7.0"
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Chứng chỉ</label>
+              <input
+                type="text"
+                name="chungChi"
+                value={formData.chungChi}
+                onChange={handleChange}
+                placeholder="Các chứng chỉ đã có..."
+              />
+            </div>
+
+            <div className="form-group">
+              <label>CV / Sơ yếu lý lịch</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                 <input
                   type="file"
                   ref={fileInputRef}
                   onChange={handleCVUpload}
                   accept=".pdf"
-                  className="hidden"
+                  style={{ display: 'none' }}
                 />
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploadingCV}
-                  className="px-5 py-3 bg-stone-100 text-stone-700 rounded-xl hover:bg-stone-200 transition-colors font-medium flex items-center gap-2 disabled:opacity-50"
+                  className="btn btn-secondary"
                 >
                   {uploadingCV ? (
                     <>
-                      <div className="w-5 h-5 border-2 border-stone-400 border-t-transparent rounded-full animate-spin" />
-                      Uploading...
+                      <span className="loading" style={{ marginRight: 8, minHeight: 20 }} />
+                      Đang tải...
                     </>
                   ) : (
                     <>
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                       </svg>
-                      Upload CV
+                      Tải lên CV
                     </>
                   )}
                 </button>
                 {formData.cvUrl && (
                   <a
-                    href={formData.cvUrl}
+                    href={getFullUrl(formData.cvUrl)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-amber-600 hover:text-amber-700 text-sm font-medium flex items-center gap-1"
+                    style={{ color: 'var(--accent)', fontWeight: 600, fontSize: '0.88rem' }}
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                    View current CV
+                    Xem CV hiện tại
                   </a>
                 )}
               </div>
             </div>
 
-            <div className="flex gap-4 pt-4">
+            <div style={{ display: 'flex', gap: 14, marginTop: 8 }}>
               <button
                 type="button"
                 onClick={() => navigate(-1)}
-                className="flex-1 px-6 py-3 border border-stone-200 text-stone-600 rounded-xl hover:bg-stone-50 transition-colors font-medium"
+                className="btn btn-secondary"
+                style={{ flex: 1, justifyContent: 'center' }}
               >
-                Cancel
+                Hủy
               </button>
               <button
                 type="submit"
                 disabled={saving}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl hover:from-amber-600 hover:to-orange-600 transition-all font-medium shadow-lg shadow-amber-500/25 disabled:opacity-50 flex items-center justify-center gap-2"
+                className="btn btn-primary"
+                style={{ flex: 1, justifyContent: 'center', opacity: saving ? 0.5 : 1 }}
               >
                 {saving ? (
                   <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Saving...
+                    <span className="loading" style={{ marginRight: 8, minHeight: 20 }} />
+                    Đang lưu...
                   </>
                 ) : (
-                  'Save Changes'
+                  'Lưu thay đổi'
                 )}
               </button>
             </div>

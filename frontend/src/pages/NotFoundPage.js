@@ -3,53 +3,70 @@ import { Link } from 'react-router-dom';
 
 const NotFoundPage = () => {
   return (
-    <div className="not-found-page min-h-screen bg-stone-50 flex items-center justify-center px-6">
-      <div className="text-center max-w-lg">
-        <div className="relative mb-8">
-          <div className="text-[180px] font-bold text-stone-100 leading-none select-none">
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '40px 24px',
+      background: 'var(--bg-primary)'
+    }}>
+      <div className="container" style={{ textAlign: 'center', maxWidth: 560 }}>
+        <div style={{ position: 'relative', marginBottom: 40 }}>
+          <div style={{
+            fontSize: '160px',
+            fontWeight: '800',
+            color: 'var(--border)',
+            fontFamily: 'Playfair Display, serif',
+            lineHeight: 1,
+            letterSpacing: '-0.04em'
+          }}>
             404
           </div>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-xl shadow-amber-500/20">
-              <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <div style={{
+              width: 80,
+              height: 80,
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, var(--secondary) 0%, var(--tertiary) 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 8px 32px rgba(196, 93, 58, 0.3)'
+            }}>
+              <svg width="36" height="36" fill="none" stroke="white" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
           </div>
         </div>
 
-        <h1 className="text-3xl font-bold text-stone-800 mb-4">Page Not Found</h1>
-        <p className="text-stone-500 mb-8 text-lg">
-          The page you're looking for doesn't exist or has been moved.
+        <h1 style={{ fontSize: '2rem', marginBottom: 16 }}>Trang không tìm thấy</h1>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: 36, fontSize: '1.1rem' }}>
+          Trang bạn đang tìm kiếm không tồn tại hoặc đã được di chuyển.
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link
-            to="/"
-            className="px-8 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl hover:from-amber-600 hover:to-orange-600 transition-all font-medium shadow-lg shadow-amber-500/25"
-          >
-            Back to Home
+        <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <Link to="/" className="btn btn-primary">
+            Quay về trang chủ
           </Link>
-          <Link
-            to="/jobs"
-            className="px-8 py-3 bg-white text-stone-700 rounded-xl hover:bg-stone-100 transition-all font-medium border border-stone-200"
-          >
-            Browse Jobs
+          <Link to="/jobs" className="btn btn-secondary">
+            Tìm việc ngay
           </Link>
         </div>
 
-        <div className="mt-16 pt-8 border-t border-stone-200">
-          <p className="text-stone-400 text-sm mb-4">Or explore more</p>
-          <div className="flex justify-center gap-6">
-            <Link to="/companies" className="text-amber-600 hover:text-amber-700 font-medium transition-colors">
-              Companies
-            </Link>
-            <Link to="/blogs" className="text-amber-600 hover:text-amber-700 font-medium transition-colors">
-              Blog
-            </Link>
-            <Link to="/login" className="text-amber-600 hover:text-amber-700 font-medium transition-colors">
-              Login
-            </Link>
+        <div style={{ marginTop: 48, paddingTop: 32, borderTop: '1px solid var(--border-light)' }}>
+          <p style={{ color: 'var(--text-muted)', marginBottom: 16, fontSize: '0.88rem' }}>Hoặc khám phá thêm</p>
+          <div style={{ display: 'flex', gap: 24, justifyContent: 'center' }}>
+            <Link to="/companies" style={{ color: 'var(--secondary)', fontWeight: 600 }}>Công ty</Link>
+            <Link to="/blogs" style={{ color: 'var(--secondary)', fontWeight: 600 }}>Blog</Link>
+            <Link to="/login" style={{ color: 'var(--secondary)', fontWeight: 600 }}>Đăng nhập</Link>
           </div>
         </div>
       </div>

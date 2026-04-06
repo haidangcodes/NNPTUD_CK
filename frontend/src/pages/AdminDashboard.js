@@ -9,8 +9,8 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('companies');
   const [loading, setLoading] = useState(true);
 
-  const [catForm, setCatForm] = useState({ name: '', description: '' });
-  const [blogForm, setBlogForm] = useState({ title: '', content: '', thumbnailUrl: '' });
+  const [catForm, setCatForm] = useState({ tenDanhMuc: '', moTa: '' });
+  const [blogForm, setBlogForm] = useState({ tieuDe: '', noiDung: '', hinhAnhDaiDien: '' });
   const [toast, setToast] = useState(null);
 
   useEffect(() => {
@@ -25,8 +25,8 @@ const AdminDashboard = () => {
         blogService.getAll()
       ]);
       setCompanies(compRes.data.data || []);
-      setCategories(catRes.data.data || []);
-      setBlogs(blogRes.data.data || []);
+      setCategories(catRes.data.data.danhMucs || catRes.data.data || []);
+      setBlogs(blogRes.data.data.baiViets || blogRes.data.data || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -42,31 +42,31 @@ const AdminDashboard = () => {
   const handleApprove = async (id) => {
     try {
       await companyService.approve(id);
-      showToast('Company approved');
+      showToast('Đã duyệt công ty');
       loadData();
     } catch (err) {
-      showToast(err.response?.data?.message || 'Failed', 'error');
+      showToast(err.response?.data?.message || 'Thất bại', 'error');
     }
   };
 
   const handleReject = async (id) => {
     try {
       await companyService.reject(id);
-      showToast('Company rejected');
+      showToast('Đã từ chối công ty');
       loadData();
     } catch (err) {
-      showToast(err.response?.data?.message || 'Failed', 'error');
+      showToast(err.response?.data?.message || 'Thất bại', 'error');
     }
   };
 
   const handleDeleteCompany = async (id) => {
-    if (!window.confirm('Delete this company?')) return;
+    if (!window.confirm('Xóa công ty này?')) return;
     try {
       await companyService.delete(id);
-      showToast('Company deleted');
+      showToast('Đã xóa công ty');
       loadData();
     } catch (err) {
-      showToast(err.response?.data?.message || 'Failed', 'error');
+      showToast(err.response?.data?.message || 'Thất bại', 'error');
     }
   };
 
@@ -74,22 +74,22 @@ const AdminDashboard = () => {
     e.preventDefault();
     try {
       await categoryService.create(catForm);
-      setCatForm({ name: '', description: '' });
-      showToast('Category created');
+      setCatForm({ tenDanhMuc: '', moTa: '' });
+      showToast('Đã tạo danh mục');
       loadData();
     } catch (err) {
-      showToast(err.response?.data?.message || 'Failed', 'error');
+      showToast(err.response?.data?.message || 'Thất bại', 'error');
     }
   };
 
   const handleDeleteCategory = async (id) => {
-    if (!window.confirm('Delete this category?')) return;
+    if (!window.confirm('Xóa danh mục này?')) return;
     try {
       await categoryService.delete(id);
-      showToast('Category deleted');
+      showToast('Đã xóa danh mục');
       loadData();
     } catch (err) {
-      showToast(err.response?.data?.message || 'Failed', 'error');
+      showToast(err.response?.data?.message || 'Thất bại', 'error');
     }
   };
 
@@ -97,146 +97,201 @@ const AdminDashboard = () => {
     e.preventDefault();
     try {
       await blogService.create(blogForm);
-      setBlogForm({ title: '', content: '', thumbnailUrl: '' });
-      showToast('Blog post created');
+      setBlogForm({ tieuDe: '', noiDung: '', hinhAnhDaiDien: '' });
+      showToast('Đã tạo bài viết');
       loadData();
     } catch (err) {
-      showToast(err.response?.data?.message || 'Failed', 'error');
+      showToast(err.response?.data?.message || 'Thất bại', 'error');
     }
   };
 
   const handleDeleteBlog = async (id) => {
-    if (!window.confirm('Delete this blog?')) return;
+    if (!window.confirm('Xóa bài viết này?')) return;
     try {
       await blogService.delete(id);
-      showToast('Blog deleted');
+      showToast('Đã xóa bài viết');
       loadData();
     } catch (err) {
-      showToast(err.response?.data?.message || 'Failed', 'error');
+      showToast(err.response?.data?.message || 'Thất bại', 'error');
     }
   };
 
   const statusColors = {
-    APPROVED: 'bg-emerald-100 text-emerald-700',
-    PENDING: 'bg-amber-100 text-amber-700',
-    REJECTED: 'bg-red-100 text-red-700'
+    'ĐƯỢC_DUYỆT': 'active',
+    'CHỜ_XỬ_LÝ': 'pending',
+    'BỊ_TỪ_CHỐI': 'rejected'
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-slate-800 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  const statusLabels = {
+    'ĐƯỢC_DUYỆT': 'Đã duyệt',
+    'CHỜ_XỬ_LÝ': 'Chờ duyệt',
+    'BỊ_TỪ_CHỐI': 'Từ chối'
+  };
 
-  const pendingCompanies = companies.filter(c => c.status === 'PENDING').length;
+  if (loading) return <div className="loading">Đang tải...</div>;
+
+  const pendingCompanies = companies.filter(c => c.trangThai === 'CHỜ_XỬ_LÝ').length;
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="dashboard">
       {toast && (
-        <div className={`fixed top-4 right-4 z-50 px-6 py-3 rounded-xl shadow-lg ${
-          toast.type === 'error' ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'
-        }`}>
+        <div style={{
+          position: 'fixed',
+          top: 100,
+          right: 24,
+          zIndex: 1000,
+          padding: '14px 24px',
+          borderRadius: 12,
+          boxShadow: 'var(--shadow-lg)',
+          background: toast.type === 'error' ? 'var(--error)' : 'var(--success)',
+          color: 'white',
+          fontWeight: 600
+        }}>
           {toast.message}
         </div>
       )}
 
-      <div className="bg-gradient-to-r from-slate-800 to-slate-900 text-white">
-        <div className="max-w-6xl mx-auto px-6 py-8">
-          <h1 className="text-3xl font-bold mb-1">Admin Dashboard</h1>
-          <p className="text-slate-400">Manage the platform</p>
+      <div style={{ background: 'var(--bg-dark)', padding: '48px 32px', marginBottom: 0 }}>
+        <div className="container">
+          <h1 style={{ color: 'white', marginBottom: 8 }}>Admin Dashboard</h1>
+          <p style={{ color: 'rgba(255,255,255,0.5)' }}>Quản lý nền tảng</p>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 py-8">
-        <div className="flex gap-2 mb-8">
+      <div className="container" style={{ padding: '40px 32px' }}>
+        <div className="tabs">
           {[
-            { key: 'companies', label: 'Companies', count: companies.length, highlight: pendingCompanies > 0 },
-            { key: 'categories', label: 'Categories', count: categories.length },
+            { key: 'companies', label: 'Công ty', count: companies.length, highlight: pendingCompanies > 0 },
+            { key: 'categories', label: 'Danh mục', count: categories.length },
             { key: 'blogs', label: 'Blog', count: blogs.length }
           ].map(tab => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`px-5 py-2.5 rounded-full font-medium transition-all duration-300 flex items-center gap-2 ${
-                activeTab === tab.key
-                  ? 'bg-slate-800 text-white shadow-lg shadow-slate-800/30'
-                  : 'bg-white text-stone-600 hover:bg-stone-100 shadow-sm'
-              }`}
+              className={activeTab === tab.key ? 'active' : ''}
             >
               {tab.label}
-              <span className={`px-2 py-0.5 rounded-full text-xs ${
-                activeTab === tab.key ? 'bg-white/20' : 'bg-stone-100'
-              }`}>
+              <span style={{
+                marginLeft: 8,
+                padding: '4px 10px',
+                borderRadius: 12,
+                fontSize: '0.78rem',
+                background: activeTab === tab.key ? 'rgba(255,255,255,0.2)' : 'var(--bg-secondary)'
+              }}>
                 {tab.count}
               </span>
               {tab.highlight && activeTab !== tab.key && (
-                <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
+                <span style={{
+                  marginLeft: 6,
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  background: 'var(--warning)',
+                  display: 'inline-block'
+                }} />
               )}
             </button>
           ))}
         </div>
 
         {activeTab === 'companies' && (
-          <div className="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
-            <div className="p-6 border-b border-stone-100">
-              <h2 className="text-lg font-bold text-stone-800">Company Management</h2>
+          <div className="table-container">
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-light)' }}>
+              <h2 style={{ fontSize: '1.1rem', marginBottom: 4 }}>Quản lý công ty</h2>
               {pendingCompanies > 0 && (
-                <p className="text-amber-600 text-sm mt-1">{pendingCompanies} companies awaiting approval</p>
+                <p style={{ color: 'var(--warning)', fontSize: '0.88rem' }}>
+                  {pendingCompanies} công ty đang chờ duyệt
+                </p>
               )}
             </div>
-            <table className="w-full">
-              <thead className="bg-stone-50 border-b border-stone-100">
+            <table>
+              <thead>
                 <tr>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-stone-600">Company</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-stone-600">Email</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-stone-600">Status</th>
-                  <th className="px-6 py-4 text-right text-sm font-semibold text-stone-600">Actions</th>
+                  <th>Công ty</th>
+                  <th>Email</th>
+                  <th>Trạng thái</th>
+                  <th style={{ textAlign: 'right' }}>Hành động</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-stone-100">
+              <tbody>
                 {companies.map(comp => (
-                  <tr key={comp._id} className="hover:bg-stone-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-500 font-bold">
-                          {comp.name?.[0] || 'C'}
+                  <tr key={comp.id}>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                        <div style={{
+                          width: 44,
+                          height: 44,
+                          borderRadius: 10,
+                          background: 'var(--bg-secondary)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: 700,
+                          color: 'var(--accent)'
+                        }}>
+                          {comp.logoUrl ? (
+                            <img src={comp.logoUrl} alt={comp.tenCongTy} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 10 }} />
+                          ) : (
+                            comp.tenCongTy?.[0] || 'C'
+                          )}
                         </div>
                         <div>
-                          <p className="font-medium text-stone-800">{comp.name}</p>
-                          <p className="text-xs text-stone-400">{comp.address || 'No address'}</p>
+                          <p style={{ fontWeight: 600 }}>{comp.tenCongTy}</p>
+                          <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{comp.diaChi || 'Chưa cập nhật'}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-stone-500 text-sm">{comp.userId?.email}</td>
-                    <td className="px-6 py-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[comp.status]}`}>
-                        {comp.status}
+                    <td style={{ color: 'var(--text-secondary)' }}>{comp.emailLienHe}</td>
+                    <td>
+                      <span className={`status ${statusColors[comp.trangThai] || ''}`}>
+                        {statusLabels[comp.trangThai] || comp.trangThai}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      {comp.status === 'PENDING' && (
+                    <td style={{ textAlign: 'right' }}>
+                      {comp.trangThai === 'CHỜ_XỬ_LÝ' && (
                         <>
                           <button
-                            onClick={() => handleApprove(comp._id)}
-                            className="text-emerald-600 hover:text-emerald-800 text-sm font-medium mr-3"
+                            onClick={() => handleApprove(comp.id)}
+                            style={{
+                              color: 'var(--success)',
+                              background: 'none',
+                              border: 'none',
+                              cursor: 'pointer',
+                              fontWeight: 500,
+                              fontSize: '0.88rem',
+                              marginRight: 16
+                            }}
                           >
-                            Approve
+                            Duyệt
                           </button>
                           <button
-                            onClick={() => handleReject(comp._id)}
-                            className="text-amber-600 hover:text-amber-800 text-sm font-medium mr-3"
+                            onClick={() => handleReject(comp.id)}
+                            style={{
+                              color: 'var(--warning)',
+                              background: 'none',
+                              border: 'none',
+                              cursor: 'pointer',
+                              fontWeight: 500,
+                              fontSize: '0.88rem',
+                              marginRight: 16
+                            }}
                           >
-                            Reject
+                            Từ chối
                           </button>
                         </>
                       )}
                       <button
-                        onClick={() => handleDeleteCompany(comp._id)}
-                        className="text-red-500 hover:text-red-700 text-sm font-medium"
+                        onClick={() => handleDeleteCompany(comp.id)}
+                        style={{
+                          color: 'var(--error)',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontWeight: 500,
+                          fontSize: '0.88rem'
+                        }}
                       >
-                        Delete
+                        Xóa
                       </button>
                     </td>
                   </tr>
@@ -247,56 +302,63 @@ const AdminDashboard = () => {
         )}
 
         {activeTab === 'categories' && (
-          <div className="grid lg:grid-cols-2 gap-8">
-            <div className="bg-white rounded-2xl shadow-sm border border-stone-100 p-6">
-              <h2 className="text-lg font-bold text-stone-800 mb-4">Add Category</h2>
-              <form onSubmit={handleCreateCategory} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1">Name</label>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28 }}>
+            <div className="card">
+              <h3 style={{ fontSize: '1.1rem', marginBottom: 20 }}>Thêm danh mục mới</h3>
+              <form onSubmit={handleCreateCategory}>
+                <div className="form-group">
+                  <label>Tên danh mục</label>
                   <input
                     type="text"
-                    value={catForm.name}
-                    onChange={(e) => setCatForm({ ...catForm, name: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-slate-500"
-                    placeholder="e.g. Technology"
+                    value={catForm.tenDanhMuc}
+                    onChange={(e) => setCatForm({ ...catForm, tenDanhMuc: e.target.value })}
+                    placeholder="VD: Công nghệ thông tin"
                     required
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1">Description</label>
+                <div className="form-group">
+                  <label>Mô tả</label>
                   <input
                     type="text"
-                    value={catForm.description}
-                    onChange={(e) => setCatForm({ ...catForm, description: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-slate-500"
-                    placeholder="Optional description"
+                    value={catForm.moTa}
+                    onChange={(e) => setCatForm({ ...catForm, moTa: e.target.value })}
+                    placeholder="Mô tả tùy chọn"
                   />
                 </div>
-                <button
-                  type="submit"
-                  className="w-full py-3 bg-slate-800 text-white rounded-xl hover:bg-slate-900 transition-colors font-medium"
-                >
-                  Create Category
+                <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
+                  Tạo danh mục
                 </button>
               </form>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
-              <div className="p-6 border-b border-stone-100">
-                <h2 className="text-lg font-bold text-stone-800">All Categories ({categories.length})</h2>
-              </div>
-              <div className="divide-y divide-stone-100 max-h-96 overflow-y-auto">
+            <div className="card">
+              <h3 style={{ fontSize: '1.1rem', marginBottom: 20 }}>Tất cả danh mục ({categories.length})</h3>
+              <div style={{ maxHeight: 400, overflowY: 'auto' }}>
                 {categories.map(cat => (
-                  <div key={cat._id} className="px-6 py-4 flex items-center justify-between">
+                  <div key={cat.id} style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '14px 0',
+                    borderBottom: '1px solid var(--border-light)'
+                  }}>
                     <div>
-                      <p className="font-medium text-stone-800">{cat.name}</p>
-                      {cat.description && <p className="text-xs text-stone-400">{cat.description}</p>}
+                      <p style={{ fontWeight: 600 }}>{cat.tenDanhMuc}</p>
+                      {cat.moTa && (
+                        <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{cat.moTa}</p>
+                      )}
                     </div>
                     <button
-                      onClick={() => handleDeleteCategory(cat._id)}
-                      className="text-red-500 hover:text-red-700"
+                      onClick={() => handleDeleteCategory(cat.id)}
+                      style={{
+                        color: 'var(--error)',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: 8
+                      }}
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
                     </button>
@@ -308,74 +370,80 @@ const AdminDashboard = () => {
         )}
 
         {activeTab === 'blogs' && (
-          <div className="grid lg:grid-cols-2 gap-8">
-            <div className="bg-white rounded-2xl shadow-sm border border-stone-100 p-6">
-              <h2 className="text-lg font-bold text-stone-800 mb-4">Create Blog Post</h2>
-              <form onSubmit={handleCreateBlog} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1">Title</label>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28 }}>
+            <div className="card">
+              <h3 style={{ fontSize: '1.1rem', marginBottom: 20 }}>Tạo bài viết mới</h3>
+              <form onSubmit={handleCreateBlog}>
+                <div className="form-group">
+                  <label>Tiêu đề</label>
                   <input
                     type="text"
-                    value={blogForm.title}
-                    onChange={(e) => setBlogForm({ ...blogForm, title: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-slate-500"
-                    placeholder="Blog title"
+                    value={blogForm.tieuDe}
+                    onChange={(e) => setBlogForm({ ...blogForm, tieuDe: e.target.value })}
+                    placeholder="Tiêu đề bài viết"
                     required
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1">Content</label>
+                <div className="form-group">
+                  <label>Nội dung</label>
                   <textarea
-                    value={blogForm.content}
-                    onChange={(e) => setBlogForm({ ...blogForm, content: e.target.value })}
+                    value={blogForm.noiDung}
+                    onChange={(e) => setBlogForm({ ...blogForm, noiDung: e.target.value })}
                     rows={6}
-                    className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-slate-500 resize-none"
-                    placeholder="Write your blog content..."
+                    placeholder="Nội dung bài viết..."
                     required
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1">Thumbnail URL</label>
+                <div className="form-group">
+                  <label>URL hình ảnh</label>
                   <input
                     type="text"
-                    value={blogForm.thumbnailUrl}
-                    onChange={(e) => setBlogForm({ ...blogForm, thumbnailUrl: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-slate-500"
+                    value={blogForm.hinhAnhDaiDien}
+                    onChange={(e) => setBlogForm({ ...blogForm, hinhAnhDaiDien: e.target.value })}
                     placeholder="https://..."
                   />
                 </div>
-                <button
-                  type="submit"
-                  className="w-full py-3 bg-slate-800 text-white rounded-xl hover:bg-slate-900 transition-colors font-medium"
-                >
-                  Publish Post
+                <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
+                  Đăng bài viết
                 </button>
               </form>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
-              <div className="p-6 border-b border-stone-100">
-                <h2 className="text-lg font-bold text-stone-800">All Posts ({blogs.length})</h2>
-              </div>
-              <div className="divide-y divide-stone-100 max-h-[500px] overflow-y-auto">
+            <div className="card">
+              <h3 style={{ fontSize: '1.1rem', marginBottom: 20 }}>Tất cả bài viết ({blogs.length})</h3>
+              <div style={{ maxHeight: 500, overflowY: 'auto' }}>
                 {blogs.map(blog => (
-                  <div key={blog._id} className="p-6">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-stone-800 truncate">{blog.title}</h3>
-                        <p className="text-xs text-stone-400 mt-1">
-                          {new Date(blog.createdAt).toLocaleDateString('vi-VN')}
+                  <div key={blog.id} style={{
+                    padding: '16px 0',
+                    borderBottom: '1px solid var(--border-light)'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <h4 style={{ fontWeight: 600, marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {blog.tieuDe}
+                        </h4>
+                        <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                          {new Date(blog.ngayTao).toLocaleDateString('vi-VN')}
                         </p>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Link to={`/blogs/${blog._id}`} className="text-slate-400 hover:text-slate-600">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Link to={`/blogs/${blog.id}`} style={{ color: 'var(--text-muted)', padding: 6 }}>
+                          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                           </svg>
                         </Link>
-                        <button onClick={() => handleDeleteBlog(blog._id)} className="text-red-400 hover:text-red-600">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <button
+                          onClick={() => handleDeleteBlog(blog.id)}
+                          style={{
+                            color: 'var(--error)',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: 6
+                          }}
+                        >
+                          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                           </svg>
                         </button>

@@ -15,11 +15,11 @@ const CompanyEditPage = () => {
   const [toast, setToast] = useState(null);
 
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
+    tenCongTy: '',
+    moTa: '',
     website: '',
-    address: '',
-    logoUrl: ''
+    diaChi: '',
+    logoUrl: '',
   });
 
   useEffect(() => {
@@ -33,11 +33,11 @@ const CompanyEditPage = () => {
       setCompany(data);
       if (data) {
         setFormData({
-          name: data.name || '',
-          description: data.description || '',
+          tenCongTy: data.tenCongTy || '',
+          moTa: data.moTa || '',
           website: data.website || '',
-          address: data.address || '',
-          logoUrl: data.logoUrl || ''
+          diaChi: data.diaChi || '',
+          logoUrl: data.logoUrl || '',
         });
       }
     } catch (err) {
@@ -49,7 +49,7 @@ const CompanyEditPage = () => {
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
+    setTimeout(() => setToast(null), 4000);
   };
 
   const handleChange = (e) => {
@@ -64,9 +64,9 @@ const CompanyEditPage = () => {
       setUploadingLogo(true);
       const res = await uploadService.uploadImage(file);
       setFormData({ ...formData, logoUrl: res.data.data.imageUrl });
-      showToast('Logo uploaded successfully');
+      showToast('Đã tải lên logo thành công');
     } catch (err) {
-      showToast(err.response?.data?.message || 'Upload failed', 'error');
+      showToast(err.response?.data?.message || 'Tải lên thất bại', 'error');
     } finally {
       setUploadingLogo(false);
     }
@@ -74,210 +74,288 @@ const CompanyEditPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.name.trim()) {
-      showToast('Company name is required', 'error');
+    if (!formData.tenCongTy.trim()) {
+      showToast('Tên công ty là bắt buộc', 'error');
       return;
     }
     try {
       setSaving(true);
       await companyService.createOrUpdate(formData);
-      showToast(company ? 'Company updated successfully' : 'Company created successfully');
+      showToast(company ? 'Đã cập nhật công ty' : 'Đã tạo công ty');
       setTimeout(() => navigate('/dashboard/recruiter'), 1500);
     } catch (err) {
-      showToast(err.response?.data?.message || 'Save failed', 'error');
+      showToast(err.response?.data?.message || 'Lưu thất bại', 'error');
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  if (loading) return <div className="loading">Đang tải...</div>;
 
   const statusColors = {
-    APPROVED: 'bg-emerald-100 text-emerald-700',
-    PENDING: 'bg-amber-100 text-amber-700',
-    REJECTED: 'bg-red-100 text-red-700'
+    'ĐƯỢC_DUYỆT': { bg: 'rgba(61, 139, 95, 0.12)', color: 'var(--success)', label: 'Đã duyệt' },
+    'CHỜ_XỬ_LÝ': { bg: 'var(--tertiary-dim)', color: 'var(--warning)', label: 'Chờ duyệt' },
+    'BỊ_TỪ_CHỐI': { bg: 'rgba(184, 64, 64, 0.1)', color: 'var(--error)', label: 'Từ chối' }
   };
 
+  const currentStatus = statusColors[company?.trangThai] || statusColors['CHỜ_XỬ_LÝ'];
+
   return (
-    <div className="company-edit-page min-h-screen bg-stone-50">
+    <div>
       {toast && (
-        <div className={`fixed top-4 right-4 z-50 px-6 py-3 rounded-xl shadow-lg ${
-          toast.type === 'error' ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'
-        }`}>
+        <div style={{
+          position: 'fixed',
+          top: 100,
+          right: 24,
+          zIndex: 1000,
+          padding: '14px 24px',
+          borderRadius: 12,
+          boxShadow: 'var(--shadow-lg)',
+          background: toast.type === 'error' ? 'var(--error)' : 'var(--success)',
+          color: 'white',
+          fontWeight: 600
+        }}>
           {toast.message}
         </div>
       )}
 
-      <div className="max-w-2xl mx-auto px-6 py-12">
-        <button
-          onClick={() => navigate(-1)}
-          className="inline-flex items-center gap-2 text-stone-500 hover:text-emerald-600 transition-colors mb-8"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Back
-        </button>
+      <div style={{ background: 'var(--bg-dark)', paddingTop: 60, paddingBottom: 80, position: 'relative', overflow: 'hidden' }}>
+        <div style={{
+          position: 'absolute',
+          top: -150,
+          right: -50,
+          width: 500,
+          height: 500,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, var(--accent-dim) 0%, transparent 70%)',
+          animation: 'float 10s ease-in-out infinite'
+        }} />
 
-        <div className="bg-white rounded-3xl shadow-sm border border-stone-100 overflow-hidden">
-          <div className="bg-gradient-to-r from-emerald-500 to-teal-500 px-8 py-6">
-            <div className="flex items-center gap-4">
+        <div className="container" style={{ position: 'relative', zIndex: 1 }}>
+          <button
+            onClick={() => navigate(-1)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              color: 'rgba(255,255,255,0.6)',
+              marginBottom: 32,
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '0.92rem',
+              fontWeight: 500,
+              padding: 0
+            }}
+          >
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Quay lại
+          </button>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+            <div style={{
+              width: 80,
+              height: 80,
+              borderRadius: 20,
+              background: formData.logoUrl ? 'transparent' : 'var(--bg-elevated)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '2.2rem',
+              fontWeight: 700,
+              color: formData.logoUrl ? 'transparent' : 'var(--accent)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              overflow: 'hidden',
+              fontFamily: 'Playfair Display, serif'
+            }}>
               {formData.logoUrl ? (
-                <img
-                  src={formData.logoUrl}
-                  alt={formData.name}
-                  className="w-20 h-20 rounded-2xl object-cover bg-white/20"
-                />
+                <img src={formData.logoUrl} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
-                <div className="w-20 h-20 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center text-3xl font-bold text-white">
-                  {formData.name?.[0]?.toUpperCase() || 'C'}
-                </div>
+                formData.tenCongTy?.[0]?.toUpperCase() || 'C'
               )}
-              <div>
-                <h1 className="text-2xl font-bold text-white">
-                  {company ? 'Edit Company' : 'Create Company'}
-                </h1>
-                <p className="text-white/80">
-                  {company ? 'Update your company information' : 'Set up your company profile'}
-                </p>
-              </div>
+            </div>
+            <div>
+              <h1 style={{ color: 'white', fontSize: '2rem', marginBottom: 4 }}>
+                {company ? 'Chỉnh sửa công ty' : 'Tạo công ty'}
+              </h1>
+              <p style={{ color: 'rgba(255,255,255,0.6)' }}>
+                {company ? 'Cập nhật thông tin công ty của bạn' : 'Thiết lập hồ sơ công ty của bạn'}
+              </p>
             </div>
           </div>
+        </div>
 
-          {company && company.status && (
-            <div className="px-8 py-3 bg-stone-50 border-b border-stone-100">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-stone-500">Status:</span>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[company.status]}`}>
-                  {company.status}
+        <svg
+          style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}
+          viewBox="0 0 1440 50"
+          fill="none"
+          preserveAspectRatio="none"
+        >
+          <path d="M0 50V10C240 35 480 50 720 35C960 20 1200 0 1440 10V50H0Z" fill="var(--bg-primary)" />
+        </svg>
+      </div>
+
+      <div className="container" style={{ padding: '48px 32px', maxWidth: 640 }}>
+        {company && company.trangThai && (
+          <div className="card" style={{ marginBottom: 28, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{
+                width: 44,
+                height: 44,
+                borderRadius: 10,
+                background: 'var(--accent-dim)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <svg width="22" height="22" fill="none" stroke="var(--accent)" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: 4 }}>Trạng thái công ty</p>
+                <span style={{
+                  padding: '6px 14px',
+                  borderRadius: 20,
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  background: currentStatus.bg,
+                  color: currentStatus.color
+                }}>
+                  {currentStatus.label}
                 </span>
-                {company.status === 'PENDING' && (
-                  <span className="text-sm text-stone-400">(Awaiting admin approval)</span>
-                )}
               </div>
             </div>
-          )}
+            {company.trangThai === 'CHỜ_XỬ_LÝ' && (
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>
+                Đang chờ admin duyệt
+              </p>
+            )}
+          </div>
+        )}
 
-          <form onSubmit={handleSubmit} className="p-8 space-y-6">
-            <div className="space-y-3">
-              <label className="block text-sm font-medium text-stone-700">Company Logo</label>
-              <div className="flex items-center gap-4">
+        <div className="card">
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label>Logo công ty</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                 <input
                   type="file"
                   ref={fileInputRef}
                   onChange={handleLogoUpload}
                   accept="image/*"
-                  className="hidden"
+                  style={{ display: 'none' }}
                 />
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploadingLogo}
-                  className="px-5 py-3 bg-stone-100 text-stone-700 rounded-xl hover:bg-stone-200 transition-colors font-medium flex items-center gap-2 disabled:opacity-50"
+                  className="btn btn-secondary"
                 >
                   {uploadingLogo ? (
                     <>
-                      <div className="w-5 h-5 border-2 border-stone-400 border-t-transparent rounded-full animate-spin" />
-                      Uploading...
+                      <span className="loading" style={{ marginRight: 8, minHeight: 20 }} />
+                      Đang tải...
                     </>
                   ) : (
                     <>
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
-                      Upload Logo
+                      Tải lên Logo
                     </>
                   )}
                 </button>
                 {formData.logoUrl && (
-                  <span className="text-sm text-emerald-600">Logo uploaded</span>
+                  <span style={{ color: 'var(--success)', fontWeight: 600, fontSize: '0.88rem' }}>
+                    ✓ Logo đã tải
+                  </span>
                 )}
               </div>
             </div>
 
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-stone-700">
-                Company Name <span className="text-red-500">*</span>
-              </label>
+            <div className="form-group">
+              <label>Tên công ty *</label>
               <input
                 type="text"
-                name="name"
-                value={formData.name}
+                name="tenCongTy"
+                value={formData.tenCongTy}
                 onChange={handleChange}
-                className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                placeholder="Enter company name"
+                placeholder="Nhập tên công ty của bạn"
                 required
               />
             </div>
 
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-stone-700">Description</label>
+            <div className="form-group">
+              <label>Mô tả</label>
               <textarea
-                name="description"
-                value={formData.description}
+                name="moTa"
+                value={formData.moTa}
                 onChange={handleChange}
-                rows={4}
-                className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all resize-none"
-                placeholder="Tell us about your company..."
+                rows={5}
+                placeholder="Giới thiệu về công ty, văn hóa và điều gì khiến bạn trở nên đặc biệt..."
               />
             </div>
 
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-stone-700">Website</label>
+            <div className="form-group">
+              <label>Website</label>
               <input
                 type="url"
                 name="website"
                 value={formData.website}
                 onChange={handleChange}
-                className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                placeholder="https://example.com"
+                placeholder="https://congty.com"
               />
             </div>
 
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-stone-700">Address</label>
+            <div className="form-group">
+              <label>Địa chỉ</label>
               <input
                 type="text"
-                name="address"
-                value={formData.address}
+                name="diaChi"
+                value={formData.diaChi}
                 onChange={handleChange}
-                className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                placeholder="Company address"
+                placeholder="123 Đường ABC, Quận XYZ, TP.HCM"
               />
             </div>
 
-            <div className="flex gap-4 pt-4">
+            <div style={{ display: 'flex', gap: 14, marginTop: 8 }}>
               <button
                 type="button"
                 onClick={() => navigate(-1)}
-                className="flex-1 px-6 py-3 border border-stone-200 text-stone-600 rounded-xl hover:bg-stone-50 transition-colors font-medium"
+                className="btn btn-secondary"
+                style={{ flex: 1, justifyContent: 'center' }}
               >
-                Cancel
+                Hủy
               </button>
               <button
                 type="submit"
                 disabled={saving}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl hover:from-emerald-600 hover:to-teal-600 transition-all font-medium shadow-lg shadow-emerald-500/25 disabled:opacity-50 flex items-center justify-center gap-2"
+                className="btn btn-primary"
+                style={{ flex: 1, justifyContent: 'center', opacity: saving ? 0.5 : 1 }}
               >
                 {saving ? (
                   <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Saving...
+                    <span className="loading" style={{ marginRight: 8, minHeight: 20 }} />
+                    Đang lưu...
                   </>
                 ) : (
-                  company ? 'Update Company' : 'Create Company'
+                  company ? 'Cập nhật công ty' : 'Tạo công ty'
                 )}
               </button>
             </div>
           </form>
         </div>
       </div>
+
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translate(0, 0); }
+          50% { transform: translate(20px, -20px); }
+        }
+      `}</style>
     </div>
   );
 };

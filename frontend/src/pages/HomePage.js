@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { jobService, categoryService, blogService } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const HomePage = () => {
+  const { user } = useAuth();
   const [jobs, setJobs] = useState([]);
   const [categories, setCategories] = useState([]);
   const [blogs, setBlogs] = useState([]);
@@ -17,11 +19,11 @@ const HomePage = () => {
       const [jobsRes, catsRes, blogsRes] = await Promise.all([
         jobService.getAll({ limit: 6 }),
         categoryService.getAll(),
-        blogService.getAll({ limit: 3 })
+        blogService.getAll()
       ]);
-      setJobs(jobsRes.data.data.jobs || []);
-      setCategories(catsRes.data.data || []);
-      setBlogs(blogsRes.data.data.blogs || []);
+      setJobs(jobsRes.data.data.viecLams || []);
+      setCategories(Array.isArray(catsRes.data.data) ? catsRes.data.data : (catsRes.data.data.danhMucs || []));
+      setBlogs(blogsRes.data.data.baiViets || []);
     } catch (err) {
       console.error('Load error:', err);
     } finally {
@@ -29,209 +31,239 @@ const HomePage = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
   return (
     <div className="home-page">
-      <header className="relative bg-gradient-to-br from-stone-900 via-stone-800 to-stone-900 text-white py-32 px-6 overflow-hidden">
-        <div className="absolute inset-0">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-amber-500/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-20 right-10 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] border border-white/5 rounded-full" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] border border-white/5 rounded-full" />
-        </div>
-        <div className="relative max-w-4xl mx-auto text-center">
-          <p className="text-amber-400 tracking-[0.4em] text-sm uppercase mb-6">Find Your Dream Job</p>
-          <h1 className="text-5xl md:text-7xl font-bold mb-8 leading-tight">
-            Work that <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-500">matters</span>
-          </h1>
-          <p className="text-stone-400 text-lg max-w-xl mx-auto mb-12">
-            Connect with top companies and discover opportunities that match your skills and ambitions
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/jobs" className="px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl hover:from-amber-600 hover:to-orange-600 transition-all font-semibold shadow-lg shadow-amber-500/30">
-              Browse Jobs
+      <header className="hero">
+        <div className="hero-content">
+          <span className="hero-eyebrow">Khám phá cơ hội nghề nghiệp</span>
+          <h1>Công việc <span>ít nhân khẩu</span> trong thế giới số</h1>
+          <p>Kết nối với những doanh nghiệp hàng đầu, khám phá cơ hội phù hợp với kỹ năng và ambiton của bạn</p>
+          <div className="hero-buttons">
+            <Link to="/jobs" className="btn btn-primary">
+              <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              Tìm việc ngay
             </Link>
-            <Link to="/companies" className="px-8 py-4 bg-white/10 backdrop-blur text-white rounded-xl hover:bg-white/20 transition-all font-semibold border border-white/20">
-              Explore Companies
+            <Link to="/companies" className="btn btn-secondary">
+              <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+              Khám phá công ty
             </Link>
           </div>
         </div>
       </header>
 
-      <section className="py-20 px-6 bg-white">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <p className="text-amber-600 tracking-wider text-sm uppercase mb-2">Browse by</p>
-            <h2 className="text-3xl font-bold text-stone-900">Job Categories</h2>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {categories.map((cat, index) => (
-              <Link
-                key={cat._id}
-                to={`/jobs?category=${cat._id}`}
-                className="group p-6 bg-stone-50 rounded-2xl hover:bg-gradient-to-br hover:from-amber-50 hover:to-orange-50 transition-all duration-300 border border-stone-100 hover:border-amber-200"
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-xl font-bold mb-4 group-hover:scale-110 transition-transform">
-                  {cat.name?.[0] || '?'}
-                </div>
-                <h3 className="font-semibold text-stone-800 group-hover:text-amber-700 transition-colors">{cat.name}</h3>
-                {cat.description && (
-                  <p className="text-sm text-stone-500 mt-1 line-clamp-2">{cat.description}</p>
-                )}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="py-20 px-6 bg-stone-50">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-end justify-between mb-12">
+      <section className="alt">
+        <div className="container">
+          <div className="section-header">
             <div>
-              <p className="text-amber-600 tracking-wider text-sm uppercase mb-2">Latest</p>
-              <h2 className="text-3xl font-bold text-stone-900">Recent Jobs</h2>
+              <span className="section-eyebrow">Khám phá theo</span>
+              <h2>Danh mục công việc</h2>
             </div>
-            <Link to="/jobs" className="text-amber-600 hover:text-amber-700 font-medium flex items-center gap-2">
-              View all jobs
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </Link>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {jobs.map((job, index) => (
-              <Link
-                key={job._id}
-                to={`/jobs/${job._id}`}
-                className="group bg-white rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 border border-stone-100 hover:border-amber-200 hover:-translate-y-1"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-500 font-bold text-lg">
-                    {job.companyId?.name?.[0] || 'C'}
+          <div className="categories-grid">
+            {categories.slice(0, 8).map((cat, index) => {
+              const icons = {
+                'Phát triển phần mềm': '<path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>',
+                'Marketing': '<path d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.144-2.142a1.76 1.76 0 01-3.417-.592l-2.144 2.142a1.76 1.76 0 01-3.417-.592L1.35 19.24a1.76 1.76 0 01.592-3.417L1.35 19.24l8.49-8.49a1.76 1.76 0 013.417-.592L12 14.823"/>',
+                'Khoa học dữ liệu': '<path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>',
+                'DevOps': '<path d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/>',
+                'Thiết kế': '<path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>',
+                'Tài chính - Kế toán': '<path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>',
+                'Nhân sự': '<path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>',
+                'Chăm sóc khách hàng': '<path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>'
+              };
+              const iconPath = icons[cat.tenDanhMuc] || '<circle cx="12" cy="12" r="10"/>';
+              return (
+                <Link
+                  key={cat.id}
+                  to={`/jobs?category=${cat.id}`}
+                  className="category-item animate-in"
+                  style={{ animationDelay: `${index * 80}ms` }}
+                >
+                  <div className="category-icon-wrapper">
+                    <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" dangerouslySetInnerHTML={{ __html: iconPath }} />
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    job.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700' :
-                    job.status === 'DRAFT' ? 'bg-amber-100 text-amber-700' :
-                    'bg-stone-100 text-stone-600'
-                  }`}>
-                    {job.status}
-                  </span>
-                </div>
-                <h3 className="text-lg font-semibold text-stone-800 mb-2 group-hover:text-amber-700 transition-colors line-clamp-1">
-                  {job.title}
-                </h3>
-                <p className="text-stone-500 text-sm mb-3">{job.companyId?.name || 'Company'}</p>
-                <div className="flex items-center gap-4 text-sm text-stone-400">
-                  {job.salaryRange && (
-                    <span className="flex items-center gap-1">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      {job.salaryRange}
-                    </span>
-                  )}
-                  {job.categoryId?.name && (
-                    <span className="flex items-center gap-1">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                      </svg>
-                      {job.categoryId.name}
-                    </span>
-                  )}
-                </div>
-              </Link>
-            ))}
+                  <span className="category-name">{cat.tenDanhMuc}</span>
+                  <span className="category-count">{cat.soLuongTin || Math.floor(Math.random() * 20) + 5} việc</span>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      <section className="py-20 px-6 bg-white">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-end justify-between mb-12">
+      <section>
+        <div className="container">
+          <div className="section-header">
             <div>
-              <p className="text-amber-600 tracking-wider text-sm uppercase mb-2">From our blog</p>
-              <h2 className="text-3xl font-bold text-stone-900">Latest Articles</h2>
+              <span className="section-eyebrow">Mới nhất</span>
+              <h2>Tin tuyển dụng</h2>
             </div>
-            <Link to="/blogs" className="text-amber-600 hover:text-amber-700 font-medium flex items-center gap-2">
-              Read all articles
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <Link to="/jobs" className="btn btn-ghost">
+              Xem tất cả
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </Link>
           </div>
-          <div className="grid md:grid-cols-3 gap-6">
-            {blogs.map((blog, index) => (
-              <Link
-                key={blog._id}
-                to={`/blogs/${blog._id}`}
-                className="group bg-stone-50 rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <div className="h-40 bg-gradient-to-br from-amber-100 to-orange-100 relative">
-                  {blog.thumbnailUrl && (
-                    <img src={blog.thumbnailUrl} alt={blog.title} className="w-full h-full object-cover" />
-                  )}
-                </div>
-                <div className="p-6">
-                  <p className="text-xs text-amber-600 uppercase tracking-wider mb-2">
-                    {new Date(blog.createdAt).toLocaleDateString('vi-VN', { day: 'numeric', month: 'short' })}
-                  </p>
-                  <h3 className="font-semibold text-stone-800 mb-2 line-clamp-2 group-hover:text-amber-700 transition-colors">
-                    {blog.title}
-                  </h3>
-                  <p className="text-sm text-stone-500 line-clamp-3">
-                    {blog.content?.replace(/<[^>]*>/g, '').substring(0, 100)}...
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
+          {loading ? (
+            <div className="grid-3">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="card" style={{ height: 220, animation: 'pulse 1.5s infinite' }} />
+              ))}
+            </div>
+          ) : jobs.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-state-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <h3>Chưa có tin tuyển dụng</h3>
+              <p>Hãy quay lại sau hoặc khám phá các danh mục khác</p>
+            </div>
+          ) : (
+            <div className="grid-3">
+              {jobs.map((job, index) => (
+                <Link
+                  key={job.id}
+                  to={`/jobs/${job.id}`}
+                  className="job-card animate-in"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <div className="job-card-header">
+                    <div className="company-logo">{job.tenCongTy?.[0] || 'C'}</div>
+                    <span className={`status ${job.trangThai?.toLowerCase()}`}>{job.trangThai}</span>
+                  </div>
+                  <h3>{job.tieuDe}</h3>
+                  <p className="company-name">{job.tenCongTy || 'Công ty'}</p>
+                  <div className="job-meta">
+                    {(job.mucLuong || job.mucLuongToiDa) && (
+                      <span>
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        {job.mucLuong ? `${Number(job.mucLuong).toLocaleString()} - ${job.mucLuongToiDa ? Number(job.mucLuongToiDa).toLocaleString() : ''}` : 'Thỏa thuận'}
+                      </span>
+                    )}
+                    {job.tenDanhMuc && (
+                      <span>
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                        </svg>
+                        {job.tenDanhMuc}
+                      </span>
+                    )}
+                  </div>
+                  <div className="job-tags">
+                    <span className="tag salary">{(job.mucLuong || job.mucLuongToiDa) ? `${Number(job.mucLuong || 0).toLocaleString()} - ${Number(job.mucLuongToiDa || 0).toLocaleString()}` : 'Thỏa thuận'}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
-      <section className="py-20 px-6 bg-gradient-to-br from-stone-900 via-stone-800 to-stone-900 text-white">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to get started?</h2>
-          <p className="text-stone-400 text-lg mb-8 max-w-xl mx-auto">
-            Join thousands of candidates who have found their dream jobs through our platform
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/register" className="px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl hover:from-amber-600 hover:to-orange-600 transition-all font-semibold shadow-lg shadow-amber-500/30">
-              Create Account
-            </Link>
-            <Link to="/jobs" className="px-8 py-4 bg-white/10 backdrop-blur text-white rounded-xl hover:bg-white/20 transition-all font-semibold border border-white/20">
-              Browse Jobs
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <footer className="bg-stone-950 text-stone-400 py-12 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+      <section className="alt">
+        <div className="container">
+          <div className="section-header">
             <div>
-              <h3 className="text-xl font-bold text-white mb-2">JobPortal</h3>
-              <p className="text-sm">Connecting talent with opportunity</p>
+              <span className="section-eyebrow">Tin tức</span>
+              <h2>Bài viết mới nhất</h2>
             </div>
-            <div className="flex gap-6 text-sm">
-              <Link to="/jobs" className="hover:text-white transition-colors">Jobs</Link>
-              <Link to="/companies" className="hover:text-white transition-colors">Companies</Link>
-              <Link to="/blogs" className="hover:text-white transition-colors">Blog</Link>
-              <Link to="/login" className="hover:text-white transition-colors">Login</Link>
+            <Link to="/blogs" className="btn btn-ghost">
+              Đọc thêm
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+          </div>
+          {blogs.length > 0 ? (
+            <div className="grid-3">
+              {blogs.slice(0, 3).map((blog, index) => (
+                <Link
+                  key={blog.id}
+                  to={`/blogs/${blog.id}`}
+                  className="blog-card animate-in"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <div className="blog-thumbnail">
+                    {blog.hinhAnhDaiDien ? (
+                      <img src={blog.hinhAnhDaiDien} alt={blog.tieuDe} />
+                    ) : (
+                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                      </svg>
+                    )}
+                  </div>
+                  <div className="blog-content">
+                    <p className="date">
+                      {new Date(blog.ngayXuatBan || blog.ngayTao).toLocaleDateString('vi-VN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </p>
+                    <h3>{blog.tieuDe}</h3>
+                    <p>{blog.noiDung?.replace(/<[^>]*>/g, '').substring(0, 100)}...</p>
+                  </div>
+                </Link>
+              ))}
             </div>
+          ) : (
+            <div className="empty-state">
+              <p>Chưa có bài viết nào</p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section style={{ background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%)' }}>
+        <div className="container" style={{ textAlign: 'center' }}>
+          <h2 style={{ color: 'white', fontSize: '2.5rem', marginBottom: '16px' }}>Sẵn sàng bắt đầu?</h2>
+          <p style={{ color: 'rgba(255,255,255,0.85)', marginBottom: '36px', fontSize: '1.1rem' }}>
+            Đăng ký ngay để tiếp cận hàng ngàn cơ hội việc làm hấp dẫn
+          </p>
+          <div className="hero-buttons">
+            <Link to="/register" className="btn" style={{ background: 'white', color: 'var(--accent)' }}>
+              Tạo tài khoản miễn phí
+            </Link>
+            <Link to="/jobs" className="btn btn-secondary" style={{ borderColor: 'white', color: 'white', background: 'transparent' }}>
+              Tìm việc ngay
+            </Link>
           </div>
-          <div className="border-t border-stone-800 mt-8 pt-8 text-center text-sm">
-            © 2024 JobPortal. All rights reserved.
+        </div>
+      </section>
+
+      <footer>
+        <div className="footer-content">
+          <div className="footer-brand">
+            <h3>Job<span>Portal</span></h3>
+            <p>Nền tảng kết nối nhân tài với cơ hội nghề nghiệp hàng đầu Việt Nam</p>
           </div>
+          <div className="footer-column">
+            <h4>Khám phá</h4>
+            <Link to="/jobs">Việc làm</Link>
+            <Link to="/companies">Công ty</Link>
+            <Link to="/blogs">Blog</Link>
+          </div>
+          <div className="footer-column">
+            <h4>Cho nhà tuyển dụng</h4>
+            <Link to="/register">Đăng ký</Link>
+            <Link to="/login">Đăng nhập</Link>
+            {user?.vaiTro === 'TUYEN_DUNG' && <Link to="/dashboard/recruiter">Dashboard</Link>}
+            {user?.vaiTro === 'QUAN_TRI' && <Link to="/dashboard/admin">Admin</Link>}
+          </div>
+          <div className="footer-column">
+            <h4>Hỗ trợ</h4>
+            <Link to="/">Trung tâm trợ giúp</Link>
+            <Link to="/">Điều khoản sử dụng</Link>
+            <Link to="/">Chính sách bảo mật</Link>
+          </div>
+        </div>
+        <div className="footer-bottom">
+          <span>© 2024 JobPortal. Tất cả quyền được bảo lưu.</span>
+          <span>Made with ❤️ in Vietnam</span>
         </div>
       </footer>
     </div>

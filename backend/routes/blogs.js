@@ -1,0 +1,17 @@
+const express = require('express');
+const router = express.Router();
+const blogController = require('../controllers/blogController');
+const { verifyToken, checkRole } = require('../utils/authHandler');
+
+router.get('/', blogController.getAllBlogs);
+router.get('/:id', blogController.getBlogById);
+router.get('/featured', blogController.getFeaturedBlogs);
+router.get('/author/:authorId', blogController.getBlogsByAuthor);
+
+router.use(verifyToken);
+
+router.post('/', blogController.createBlog);
+router.put('/:id', blogController.updateBlog);
+router.delete('/:id', blogController.deleteBlog);
+
+module.exports = router;

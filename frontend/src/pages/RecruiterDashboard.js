@@ -1,25 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { jobService, companyService, applicationService, interviewService } from '../services/api';
+import { Link } from 'react-router-dom';
+import { jobService, companyService, applicationService } from '../services/api';
+import { getFullUrl } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 const RecruiterDashboard = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [myJobs, setMyJobs] = useState([]);
   const [company, setCompany] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [showJobForm, setShowJobForm] = useState(false);
   const [activeTab, setActiveTab] = useState('jobs');
   const [selectedJobApps, setSelectedJobApps] = useState(null);
   const [jobApplications, setJobApplications] = useState([]);
+  const [categories, setCategories] = useState([]);
 
   const [jobForm, setJobForm] = useState({
-    title: '',
-    description: '',
-    requirements: '',
-    salaryRange: '',
-    categoryId: ''
+    tieuDe: '',
+    moTa: '',
+    yeuCau: '',
+    mucLuong: '',
+    danhMucId: ''
   });
 
   useEffect(() => {
@@ -45,8 +45,8 @@ const RecruiterDashboard = () => {
     e.preventDefault();
     try {
       await jobService.create(jobForm);
-      setShowJobForm(false);
-      setJobForm({ title: '', description: '', requirements: '', salaryRange: '', categoryId: '' });
+      setActiveTab('jobs');
+      setJobForm({ tieuDe: '', moTa: '', yeuCau: '', mucLuong: '', danhMucId: '' });
       loadData();
     } catch (err) {
       console.error(err);
@@ -57,7 +57,7 @@ const RecruiterDashboard = () => {
     if (!window.confirm('Xóa việc làm này?')) return;
     try {
       await jobService.delete(id);
-      setMyJobs(myJobs.filter(j => j._id !== id));
+      setMyJobs(myJobs.filter(j => j.id !== id));
     } catch (err) {
       console.error(err);
     }
@@ -69,279 +69,449 @@ const RecruiterDashboard = () => {
       setJobApplications(res.data.data || []);
       setSelectedJobApps(jobId);
     } catch (err) {
+      console.error('Error fetching applications:', err);
+    }
+  };
+
+  const handleUpdateStatus = async (appId, newStatus) => {
+    try {
+      await applicationService.updateStatus(appId, newStatus);
+      // Refresh applications list
+      viewApplications(selectedJobApps);
+    } catch (err) {
       console.error(err);
     }
   };
 
-  const statusColors = {
-    APPLIED: 'bg-blue-100 text-blue-700',
-    REVIEWING: 'bg-amber-100 text-amber-700',
-    SHORTLISTED: 'bg-emerald-100 text-emerald-700',
-    REJECTED: 'bg-red-100 text-red-700'
+  const appStatusColors = {
+    'DA_NOP': 'pending',
+    'DANG_XEM': 'active',
+    'TRUNG_TUYEN': 'active',
+    'TUYEN_THANG': 'active',
+    'TU_CHOI': 'rejected',
+    'RUT_HO_SO': 'rejected'
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  const appStatusLabels = {
+    'DA_NOP': 'Đã nộp',
+    'DANG_XEM': 'Đang xem',
+    'TRUNG_TUYEN': 'Trúng tuyển',
+    'TUYEN_THANG': 'Tuyển thẳng',
+    'TU_CHOI': 'Từ chối',
+    'RUT_HO_SO': 'Rút hồ sơ'
+  };
+
+  const statusColors = {
+    'ĐANG_TUYỂN': 'active',
+    'NHÁP': 'pending',
+    'TẠM_DỪNG': 'pending',
+    'ĐÃ_ĐÓNG': 'closed'
+  };
+
+  const statusLabels = {
+    'ĐANG_TUYỂN': 'Đang tuyển',
+    'NHÁP': 'Nháp',
+    'TẠM_DỪNG': 'Tạm dừng',
+    'ĐÃ_ĐÓNG': 'Đã đóng'
+  };
+
+  if (loading) return <div className="loading">Đang tải...</div>;
 
   return (
-    <div className="min-h-screen bg-stone-50">
-      <div className="bg-white border-b border-stone-200">
-        <div className="max-w-5xl mx-auto px-6 py-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-stone-900">Recruiter Dashboard</h1>
-              <p className="text-stone-500 mt-1">Welcome, {user?.email}</p>
-            </div>
-            <div className="flex gap-3">
-              <Link
-                to="/dashboard/interviews"
-                className="px-5 py-2.5 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition-colors font-medium"
-              >
-                View Interviews
-              </Link>
-              <Link
-                to="/company/edit"
-                className="px-5 py-2.5 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-colors font-medium shadow-lg shadow-emerald-500/25"
-              >
-                {company ? 'Edit Company' : 'Create Company'}
-              </Link>
-            </div>
-          </div>
+    <div className="dashboard">
+      <div className="dashboard-header">
+        <div>
+          <h1>Dashboard Nhà tuyển dụng</h1>
+          <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>Chào mừng, {user?.email}</p>
+        </div>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <Link to="/dashboard/interviews" className="btn btn-secondary">
+            Xem lịch phỏng vấn
+          </Link>
+          <Link to="/company/edit" className="btn btn-primary">
+            {company ? 'Chỉnh sửa công ty' : 'Tạo công ty'}
+          </Link>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 py-8">
-        {company && (
-          <div className="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl p-6 mb-8 text-white">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-xl bg-white/20 flex items-center justify-center text-2xl font-bold">
-                {company.name?.[0] || 'C'}
-              </div>
-              <div className="flex-1">
-                <h2 className="text-xl font-bold">{company.name}</h2>
-                <p className="text-white/80 text-sm">{company.address || 'No address'}</p>
-              </div>
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                company.status === 'APPROVED' ? 'bg-emerald-200 text-emerald-800' : 'bg-amber-200 text-amber-800'
-              }`}>
-                {company.status}
-              </span>
+      {company && (
+        <div className="card" style={{
+          background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%)',
+          color: 'white',
+          marginBottom: 32
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+            <div style={{
+              width: 64,
+              height: 64,
+              borderRadius: 16,
+              background: 'rgba(255,255,255,0.2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '1.8rem',
+              fontWeight: 700
+            }}>
+              {company.logoUrl ? (
+                <img src={company.logoUrl} alt={company.tenCongTy} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 16 }} />
+              ) : (
+                company.tenCongTy?.[0] || 'C'
+              )}
             </div>
+            <div style={{ flex: 1 }}>
+              <h2 style={{ color: 'white', fontSize: '1.4rem', marginBottom: 4 }}>{company.tenCongTy}</h2>
+              <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.92rem' }}>{company.diaChi || 'Chưa cập nhật địa chỉ'}</p>
+            </div>
+            <span style={{
+              padding: '8px 16px',
+              borderRadius: 20,
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              background: company.trangThai === 'ĐƯỢC_DUYỆT' ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.15)',
+              color: 'white'
+            }}>
+              {company.trangThai === 'ĐƯỢC_DUYỆT' ? 'Đã duyệt' : company.trangThai === 'CHỜ_XỬ_LÝ' ? 'Chờ duyệt' : company.trangThai}
+            </span>
           </div>
-        )}
-
-        <div className="flex gap-2 mb-8">
-          <button
-            onClick={() => setActiveTab('jobs')}
-            className={`px-5 py-2.5 rounded-full font-medium transition-all duration-300 ${
-              activeTab === 'jobs'
-                ? 'bg-slate-800 text-white shadow-lg shadow-slate-800/30'
-                : 'bg-white text-stone-600 hover:bg-stone-100 shadow-sm'
-            }`}
-          >
-            My Jobs ({myJobs.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('create')}
-            className={`px-5 py-2.5 rounded-full font-medium transition-all duration-300 ${
-              activeTab === 'create'
-                ? 'bg-slate-800 text-white shadow-lg shadow-slate-800/30'
-                : 'bg-white text-stone-600 hover:bg-stone-100 shadow-sm'
-            }`}
-          >
-            Post New Job
-          </button>
         </div>
+      )}
 
-        {activeTab === 'create' && (
-          <div className="bg-white rounded-2xl p-8 shadow-sm border border-stone-100">
-            <h3 className="text-xl font-bold text-stone-800 mb-6">Post a New Job</h3>
-            <form onSubmit={handleCreateJob} className="space-y-5">
-              <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1">Job Title *</label>
+      <div className="tabs">
+        <button
+          onClick={() => setActiveTab('jobs')}
+          className={activeTab === 'jobs' ? 'active' : ''}
+        >
+          Tin tuyển dụng ({myJobs.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('create')}
+          className={activeTab === 'create' ? 'active' : ''}
+        >
+          Đăng tin mới
+        </button>
+      </div>
+
+      {activeTab === 'create' && (
+        <div className="card">
+          <h3 style={{ fontSize: '1.3rem', marginBottom: 24 }}>Đăng tin tuyển dụng mới</h3>
+          <form onSubmit={handleCreateJob}>
+            <div className="form-group">
+              <label>Tên vị trí *</label>
+              <input
+                type="text"
+                value={jobForm.tieuDe}
+                onChange={(e) => setJobForm({ ...jobForm, tieuDe: e.target.value })}
+                placeholder="VD: Senior React Developer"
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Mô tả *</label>
+              <textarea
+                value={jobForm.moTa}
+                onChange={(e) => setJobForm({ ...jobForm, moTa: e.target.value })}
+                rows={4}
+                placeholder="Mô tả chi tiết về vị trí..."
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Yêu cầu *</label>
+              <textarea
+                value={jobForm.yeuCau}
+                onChange={(e) => setJobForm({ ...jobForm, yeuCau: e.target.value })}
+                rows={3}
+                placeholder="Liệt kê các yêu cầu..."
+                required
+              />
+            </div>
+            <div className="grid-2">
+              <div className="form-group">
+                <label>Mức lương</label>
                 <input
                   type="text"
-                  value={jobForm.title}
-                  onChange={(e) => setJobForm({ ...jobForm, title: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  placeholder="e.g. Senior React Developer"
-                  required
+                  value={jobForm.mucLuong}
+                  onChange={(e) => setJobForm({ ...jobForm, mucLuong: e.target.value })}
+                  placeholder="VD: 10000000 - 20000000"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1">Description *</label>
-                <textarea
-                  value={jobForm.description}
-                  onChange={(e) => setJobForm({ ...jobForm, description: e.target.value })}
-                  rows={4}
-                  className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
-                  placeholder="Describe the role..."
-                  required
+              <div className="form-group">
+                <label>ID Danh mục</label>
+                <input
+                  type="text"
+                  value={jobForm.danhMucId}
+                  onChange={(e) => setJobForm({ ...jobForm, danhMucId: e.target.value })}
+                  placeholder="ID danh mục"
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1">Requirements *</label>
-                <textarea
-                  value={jobForm.requirements}
-                  onChange={(e) => setJobForm({ ...jobForm, requirements: e.target.value })}
-                  rows={3}
-                  className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
-                  placeholder="List requirements..."
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1">Salary Range</label>
-                  <input
-                    type="text"
-                    value={jobForm.salaryRange}
-                    onChange={(e) => setJobForm({ ...jobForm, salaryRange: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    placeholder="e.g. $5000 - $8000"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1">Category ID</label>
-                  <input
-                    type="text"
-                    value={jobForm.categoryId}
-                    onChange={(e) => setJobForm({ ...jobForm, categoryId: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    placeholder="MongoDB ObjectId"
-                  />
-                </div>
-              </div>
-              <div className="flex gap-4 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('jobs')}
-                  className="px-6 py-3 border border-stone-200 text-stone-600 rounded-xl hover:bg-stone-50 transition-colors font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-3 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-colors font-medium shadow-lg shadow-emerald-500/25"
-                >
-                  Post Job
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
-
-        {activeTab === 'jobs' && (
-          <div className="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
-            {myJobs.length === 0 ? (
-              <div className="p-12 text-center">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-stone-100 flex items-center justify-center">
-                  <svg className="w-8 h-8 text-stone-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-semibold text-stone-700 mb-2">No jobs posted yet</h3>
-                <p className="text-stone-500 mb-4">Post your first job to start receiving applications</p>
-                <button onClick={() => setActiveTab('create')} className="text-emerald-600 hover:text-emerald-700 font-medium">
-                  Post a Job →
-                </button>
-              </div>
-            ) : (
-              <table className="w-full">
-                <thead className="bg-stone-50 border-b border-stone-100">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-stone-600">Job Title</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-stone-600">Category</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-stone-600">Status</th>
-                    <th className="px-6 py-4 text-right text-sm font-semibold text-stone-600">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-stone-100">
-                  {myJobs.map(job => (
-                    <tr key={job._id} className="hover:bg-stone-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <Link to={`/jobs/${job._id}`} className="font-medium text-stone-800 hover:text-emerald-600">
-                          {job.title}
-                        </Link>
-                      </td>
-                      <td className="px-6 py-4 text-stone-500 text-sm">
-                        {job.categoryId?.name || 'N/A'}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          job.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700' :
-                          job.status === 'DRAFT' ? 'bg-amber-100 text-amber-700' :
-                          'bg-stone-100 text-stone-600'
-                        }`}>
-                          {job.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={() => viewApplications(job._id)}
-                          className="text-slate-600 hover:text-slate-800 text-sm font-medium mr-3"
-                        >
-                          View Apps
-                        </button>
-                        <button
-                          onClick={() => handleDeleteJob(job._id)}
-                          className="text-red-500 hover:text-red-700 text-sm font-medium"
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        )}
-
-        {selectedJobApps && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
-              <div className="px-6 py-4 border-b border-stone-200 flex items-center justify-between">
-                <h3 className="text-lg font-bold text-stone-800">Applications</h3>
-                <button onClick={() => setSelectedJobApps(null)} className="text-stone-400 hover:text-stone-600">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              <div className="p-6 overflow-y-auto max-h-[calc(80vh-80px)]">
-                {jobApplications.length === 0 ? (
-                  <p className="text-center text-stone-500">No applications yet</p>
-                ) : (
-                  <div className="space-y-4">
-                    {jobApplications.map(app => (
-                      <div key={app._id} className="border border-stone-100 rounded-xl p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <p className="font-medium text-stone-800">{app.candidateId?.email || 'N/A'}</p>
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[app.status]}`}>
-                            {app.status}
-                          </span>
-                        </div>
-                        <p className="text-sm text-stone-500">Applied: {new Date(app.createdAt).toLocaleDateString('vi-VN')}</p>
-                        {app.cvUrl && (
-                          <a href={app.cvUrl} target="_blank" rel="noopener noreferrer" className="text-amber-600 hover:text-amber-700 text-sm font-medium mt-2 inline-block">
-                            View CV
-                          </a>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
+            <div style={{ display: 'flex', gap: 14, marginTop: 8 }}>
+              <button type="button" onClick={() => setActiveTab('jobs')} className="btn btn-secondary">
+                Hủy
+              </button>
+              <button type="submit" className="btn btn-primary">
+                Đăng tin
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {activeTab === 'jobs' && (
+        <div className="table-container">
+          {myJobs.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-state-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <h3>Chưa có tin tuyển dụng nào</h3>
+              <p>Đăng tin đầu tiên để bắt đầu nhận hồ sơ</p>
+              <button onClick={() => setActiveTab('create')} className="btn btn-primary" style={{ marginTop: 8 }}>
+                Đăng tin ngay
+              </button>
+            </div>
+          ) : (
+            <table>
+              <thead>
+                <tr>
+                  <th>Tên vị trí</th>
+                  <th>Ngày đăng</th>
+                  <th>Trạng thái</th>
+                  <th style={{ textAlign: 'right' }}>Hành động</th>
+                </tr>
+              </thead>
+              <tbody>
+                {myJobs.map(job => (
+                  <tr key={job.id}>
+                    <td>
+                      <Link to={`/jobs/${job.id}`} style={{ fontWeight: 600, color: 'var(--accent)' }}>
+                        {job.tieuDe}
+                      </Link>
+                    </td>
+                    <td style={{ color: 'var(--text-secondary)' }}>
+                      {new Date(job.ngayTao).toLocaleDateString('vi-VN')}
+                    </td>
+                    <td>
+                      <span className={`status ${statusColors[job.trangThai] || ''}`}>
+                        {statusLabels[job.trangThai] || job.trangThai}
+                      </span>
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <button
+                        onClick={() => viewApplications(job.id)}
+                        style={{
+                          color: 'var(--text-secondary)',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontWeight: 500,
+                          fontSize: '0.88rem',
+                          marginRight: 16
+                        }}
+                      >
+                        Xem hồ sơ
+                      </button>
+                      <button
+                        onClick={() => handleDeleteJob(job.id)}
+                        style={{ color: 'var(--error)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: '0.88rem' }}
+                      >
+                        Xóa
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
+      {selectedJobApps && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: 24
+          }}
+          onClick={() => setSelectedJobApps(null)}
+        >
+          <div
+            style={{
+              background: 'var(--bg-card)',
+              borderRadius: 24,
+              maxWidth: 560,
+              width: '100%',
+              maxHeight: '80vh',
+              overflow: 'hidden',
+              boxShadow: 'var(--shadow-lg)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{
+              padding: '20px 24px',
+              borderBottom: '1px solid var(--border)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <h3 style={{ fontSize: '1.2rem' }}>Danh sách ứng viên</h3>
+              <button
+                onClick={() => setSelectedJobApps(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+              >
+                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div style={{ padding: 24, overflowY: 'auto', maxHeight: 'calc(80vh - 80px)' }}>
+              {jobApplications.length === 0 ? (
+                <p style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Chưa có hồ sơ nào</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  {jobApplications.map(app => (
+                    <div key={app.id} style={{
+                      padding: 16,
+                      borderRadius: 14,
+                      border: '1px solid var(--border-light)',
+                      background: 'var(--bg-secondary)'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                        <p style={{ fontWeight: 600 }}>{app.hoVaTen || app.email || 'N/A'}</p>
+                        <span className={`status ${appStatusColors[app.trangThai] || ''}`}>
+                          {appStatusLabels[app.trangThai] || app.trangThai}
+                        </span>
+                      </div>
+                      <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginBottom: 8 }}>
+                        Ứng tuyển: {new Date(app.ngayNop).toLocaleDateString('vi-VN')}
+                      </p>
+                      {app.cvUrl && (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            CV: {getFullUrl(app.cvUrl)}
+                          </span>
+                          <a
+                            href={getFullUrl(app.cvUrl)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            download={`CV_${app.hoVaTen || 'ungvien'}.pdf`}
+                            style={{ color: 'var(--accent)', fontWeight: 600, fontSize: '0.88rem' }}
+                          >
+                            Tải CV
+                          </a>
+                        </span>
+                      )}
+                      {app.trangThai === 'DA_NOP' && (
+                        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                          <button
+                            onClick={() => handleUpdateStatus(app.id, 'DANG_XEM')}
+                            style={{
+                              background: 'var(--warning)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: 6,
+                              padding: '4px 12px',
+                              fontSize: '0.8rem',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Đang xem
+                          </button>
+                          <button
+                            onClick={() => handleUpdateStatus(app.id, 'TRUNG_TUYEN')}
+                            style={{
+                              background: 'var(--success)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: 6,
+                              padding: '4px 12px',
+                              fontSize: '0.8rem',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Trúng tuyển
+                          </button>
+                          <button
+                            onClick={() => handleUpdateStatus(app.id, 'TU_CHOI')}
+                            style={{
+                              background: 'var(--error)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: 6,
+                              padding: '4px 12px',
+                              fontSize: '0.8rem',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Từ chối
+                          </button>
+                        </div>
+                      )}
+                      {app.trangThai === 'DANG_XEM' && (
+                        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                          <button
+                            onClick={() => handleUpdateStatus(app.id, 'TRUNG_TUYEN')}
+                            style={{
+                              background: 'var(--success)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: 6,
+                              padding: '4px 12px',
+                              fontSize: '0.8rem',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Trúng tuyển
+                          </button>
+                          <button
+                            onClick={() => handleUpdateStatus(app.id, 'TU_CHOI')}
+                            style={{
+                              background: 'var(--error)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: 6,
+                              padding: '4px 12px',
+                              fontSize: '0.8rem',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Từ chối
+                          </button>
+                        </div>
+                      )}
+                      {app.trangThai === 'TRUNG_TUYEN' && (
+                        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                          <button
+                            onClick={() => handleUpdateStatus(app.id, 'TUYEN_THANG')}
+                            style={{
+                              background: 'var(--success)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: 6,
+                              padding: '4px 12px',
+                              fontSize: '0.8rem',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Tuyển thẳng
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

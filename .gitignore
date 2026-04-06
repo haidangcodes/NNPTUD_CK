@@ -1,8 +1,30 @@
+# Dependencies
 node_modules/
-.env
 frontend/node_modules/
+
+# Environment
+.env
 frontend/.env
+
+# Cache
 frontend/.cache/
-uploads/
+
+# Uploads
+backend/uploads/
+
+# Logs
 *.log
+
+# macOS
 .DS_Store
+
+# IDE
+.idea/
+.vscode/
+
+# Build
+frontend/build/
+frontend/dist/
+
+# Claude
+.claude/

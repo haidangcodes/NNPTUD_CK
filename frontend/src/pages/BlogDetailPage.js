@@ -20,14 +20,14 @@ const BlogDetailPage = () => {
       const res = await blogService.getById(id);
       setBlog(res.data.data);
     } catch (err) {
-      setError('Article not found');
+      setError('Không tìm thấy bài viết');
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Delete this article?')) return;
+    if (!window.confirm('Xóa bài viết này?')) return;
     try {
       await blogService.delete(id);
       navigate('/blogs');
@@ -37,83 +37,121 @@ const BlogDetailPage = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <div className="loading">Đang tải...</div>;
   }
 
   if (error || !blog) {
     return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-serif text-stone-700 mb-4">{error || 'Article not found'}</h2>
-          <Link to="/blogs" className="text-amber-600 hover:text-amber-700">← Back to articles</Link>
-        </div>
+      <div style={{ padding: '100px 32px', textAlign: 'center' }}>
+        <h2 style={{ fontSize: '1.5rem', marginBottom: 16 }}>{error || 'Không tìm thấy bài viết'}</h2>
+        <Link to="/blogs" className="btn btn-primary">← Quay lại bài viết</Link>
       </div>
     );
   }
 
   return (
-    <div className="blog-detail-page min-h-screen bg-stone-50">
-      <article className="max-w-3xl mx-auto px-6 py-12">
-        <Link to="/blogs" className="inline-flex items-center gap-2 text-stone-500 hover:text-amber-600 transition-colors mb-8">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          All articles
-        </Link>
+    <div style={{ paddingBottom: 80 }}>
+      <div style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-light)' }}>
+        <div className="container" style={{ padding: '48px 32px', maxWidth: 800 }}>
+          <Link
+            to="/blogs"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              color: 'var(--text-secondary)',
+              marginBottom: 24,
+              fontSize: '0.95rem',
+              fontWeight: 500
+            }}
+          >
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Tất cả bài viết
+          </Link>
 
-        <header className="mb-12">
-          <p className="text-amber-600 tracking-wider text-sm uppercase mb-4">
-            {new Date(blog.createdAt).toLocaleDateString('vi-VN', { day: 'numeric', month: 'long', year: 'numeric' })}
+          <p style={{
+            fontSize: '0.85rem',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '0.1em',
+            color: 'var(--secondary)',
+            marginBottom: 16
+          }}>
+            {new Date(blog.ngayXuatBan || blog.ngayTao).toLocaleDateString('vi-VN', { day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
-          <h1 className="text-4xl md:text-5xl font-serif font-bold text-stone-900 leading-tight mb-6">
-            {blog.title}
+
+          <h1 style={{ fontSize: 'clamp(2rem, 5vw, 3rem)', marginBottom: 24, lineHeight: 1.2 }}>
+            {blog.tieuDe}
           </h1>
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-medium">
-              {blog.authorId?.email?.[0]?.toUpperCase() || 'A'}
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{
+              width: 48,
+              height: 48,
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              fontWeight: 700,
+              fontSize: '1.1rem'
+            }}>
+              {blog.tacGiaEmail?.[0]?.toUpperCase() || blog.hoVaTenTacGia?.[0]?.toUpperCase() || 'A'}
             </div>
             <div>
-              <p className="font-medium text-stone-800">{blog.authorId?.email}</p>
-              <p className="text-sm text-stone-500">Author</p>
+              <p style={{ fontWeight: 600 }}>{blog.tacGiaEmail || blog.hoVaTenTacGia}</p>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Tác giả</p>
             </div>
-            {user && (user.role === 'ADMIN' || user.id === blog.authorId?._id) && (
+            {user && (user.vaiTro === 'QUAN_TRI' || user.id === blog.tacGiaId) && (
               <button
                 onClick={handleDelete}
-                className="ml-auto text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-50 transition-colors"
+                style={{
+                  marginLeft: 'auto',
+                  background: 'rgba(184, 64, 64, 0.1)',
+                  color: 'var(--error)',
+                  border: 'none',
+                  padding: 10,
+                  borderRadius: 10,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
               </button>
             )}
           </div>
-        </header>
+        </div>
+      </div>
 
-        {blog.thumbnailUrl && (
-          <div className="rounded-2xl overflow-hidden mb-12 shadow-lg">
-            <img src={blog.thumbnailUrl} alt={blog.title} className="w-full h-80 object-cover" />
+      <div className="container" style={{ padding: '48px 32px', maxWidth: 800 }}>
+        {blog.hinhAnhDaiDien && (
+          <div style={{ borderRadius: 20, overflow: 'hidden', marginBottom: 40, boxShadow: 'var(--shadow-lg)' }}>
+            <img src={blog.hinhAnhDaiDien} alt={blog.tieuDe} style={{ width: '100%', height: 400, objectFit: 'cover' }} />
           </div>
         )}
 
-        <div className="prose prose-stone max-w-none">
-          <div className="text-lg leading-relaxed text-stone-700 whitespace-pre-wrap">
-            {blog.content}
-          </div>
-        </div>
+        <div
+          className="blog-content"
+          style={{ fontSize: '1.1rem', lineHeight: 1.9, color: 'var(--text-secondary)' }}
+          dangerouslySetInnerHTML={{ __html: blog.noiDung }}
+        />
 
-        <div className="mt-16 pt-8 border-t border-stone-200">
-          <Link to="/blogs" className="inline-flex items-center gap-2 text-amber-600 hover:text-amber-700 transition-colors">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div style={{ marginTop: 48, paddingTop: 32, borderTop: '1px solid var(--border-light)' }}>
+          <Link to="/blogs" className="btn btn-ghost">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Back to all articles
+            Quay lại tất cả bài viết
           </Link>
         </div>
-      </article>
+      </div>
     </div>
   );
 };

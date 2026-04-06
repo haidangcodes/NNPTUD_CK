@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { jobService, applicationService, uploadService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -38,12 +38,12 @@ const JobDetailPage = () => {
     if (!file) return;
 
     if (file.type !== 'application/pdf') {
-      setApplyError('Please upload a PDF file');
+      setApplyError('Vui lòng tải lên file PDF');
       return;
     }
 
     if (file.size > 10 * 1024 * 1024) {
-      setApplyError('File size must be less than 10MB');
+      setApplyError('Dung lượng file phải nhỏ hơn 10MB');
       return;
     }
 
@@ -51,9 +51,9 @@ const JobDetailPage = () => {
       setUploadingCV(true);
       setApplyError('');
       const res = await uploadService.uploadCV(file);
-      setCvFile({ name: file.name, url: res.data.data.cvUrl });
+      setCvFile({ name: file.name, url: res.data.data.url });
     } catch (err) {
-      setApplyError(err.response?.data?.message || 'Failed to upload CV');
+      setApplyError(err.response?.data?.message || 'Tải lên thất bại');
     } finally {
       setUploadingCV(false);
     }
@@ -61,7 +61,7 @@ const JobDetailPage = () => {
 
   const handleApply = async () => {
     if (!cvFile?.url) {
-      setApplyError('Please upload your CV first');
+      setApplyError('Vui lòng tải lên CV trước');
       return;
     }
 
@@ -69,64 +69,86 @@ const JobDetailPage = () => {
       setApplying(true);
       setApplyError('');
       await applicationService.apply({
-        jobId: id,
+        viecLamId: id,
         cvUrl: cvFile.url
       });
       setApplySuccess(true);
       setShowApplyModal(false);
     } catch (err) {
-      setApplyError(err.response?.data?.message || 'Application failed');
+      setApplyError(err.response?.data?.message || 'Ứng tuyển thất bại');
     } finally {
       setApplying(false);
     }
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <div className="loading">Đang tải...</div>;
   }
 
   if (!job) {
     return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-stone-700 mb-4">Job not found</h2>
-          <button onClick={() => navigate('/jobs')} className="text-amber-600 hover:text-amber-700">← Back to jobs</button>
-        </div>
+      <div style={{ padding: '100px 32px', textAlign: 'center' }}>
+        <h2 style={{ fontSize: '1.5rem', marginBottom: 16 }}>Không tìm thấy tin tuyển dụng</h2>
+        <button onClick={() => navigate('/jobs')} className="btn btn-primary">
+          ← Quay lại danh sách việc làm
+        </button>
       </div>
     );
   }
 
+  const statusColors = {
+    'ĐANG_TUYỂN': 'active',
+    'NHÁP': 'pending',
+    'TẠM_DỪNG': 'pending',
+    'ĐÃ_ĐÓNG': 'closed'
+  };
+
+  const statusLabels = {
+    'ĐANG_TUYỂN': 'Đang tuyển',
+    'NHÁP': 'Nháp',
+    'TẠM_DỪNG': 'Tạm dừng',
+    'ĐÃ_ĐÓNG': 'Đã đóng'
+  };
+
   return (
-    <div className="job-detail-page min-h-screen bg-stone-50 pb-20">
-      <div className="bg-white border-b border-stone-200">
-        <div className="max-w-4xl mx-auto px-6 py-8">
-          <button onClick={() => navigate('/jobs')} className="text-stone-500 hover:text-amber-600 transition-colors flex items-center gap-2 mb-6">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div className="job-detail-page" style={{ paddingBottom: 80 }}>
+      <div style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-light)' }}>
+        <div className="container" style={{ padding: '48px 32px' }}>
+          <button
+            onClick={() => navigate('/jobs')}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              color: 'var(--text-secondary)',
+              marginBottom: 24,
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '0.95rem',
+              fontWeight: 500,
+              padding: 0,
+              transition: 'color 0.2s'
+            }}
+          >
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Back to jobs
+            Quay lại danh sách việc làm
           </button>
 
-          <div className="flex items-start gap-6">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-3xl font-bold text-slate-400 flex-shrink-0">
-              {job.companyId?.name?.[0] || 'C'}
+          <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+            <div className="company-logo" style={{ width: 80, height: 80, fontSize: '2.2rem' }}>
+              {job.tenCongTy?.[0] || 'C'}
             </div>
-            <div className="flex-1">
-              <div className="flex items-start justify-between">
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
                 <div>
-                  <h1 className="text-3xl font-bold text-stone-900 mb-2">{job.title}</h1>
-                  <p className="text-xl text-stone-600">{job.companyId?.name}</p>
+                  <h1 style={{ fontSize: '2.2rem', marginBottom: 8 }}>{job.tieuDe}</h1>
+                  <p style={{ fontSize: '1.2rem', color: 'var(--text-secondary)' }}>{job.tenCongTy}</p>
                 </div>
-                <span className={`px-4 py-2 rounded-xl text-sm font-medium ${
-                  job.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700' :
-                  job.status === 'DRAFT' ? 'bg-amber-100 text-amber-700' :
-                  'bg-stone-100 text-stone-600'
-                }`}>
-                  {job.status}
+                <span className={`status ${statusColors[job.trangThai] || 'closed'}`}>
+                  {statusLabels[job.trangThai] || job.trangThai}
                 </span>
               </div>
             </div>
@@ -134,114 +156,145 @@ const JobDetailPage = () => {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 py-8">
-        <div className="grid lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-8">
-            <div className="bg-white rounded-2xl p-8 shadow-sm border border-stone-100">
-              <h2 className="text-xl font-bold text-stone-900 mb-4">Job Description</h2>
-              <div className="prose prose-stone max-w-none text-stone-600 whitespace-pre-wrap">
-                {job.description}
+      <div className="container" style={{ padding: '48px 32px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 40 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+            <div className="card">
+              <h2 style={{ fontSize: '1.3rem', marginBottom: 16 }}>Mô tả công việc</h2>
+              <div style={{ color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', lineHeight: 1.8 }}>
+                {job.moTa}
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl p-8 shadow-sm border border-stone-100">
-              <h2 className="text-xl font-bold text-stone-900 mb-4">Requirements</h2>
-              <div className="prose prose-stone max-w-none text-stone-600 whitespace-pre-wrap">
-                {job.requirements}
+            <div className="card">
+              <h2 style={{ fontSize: '1.3rem', marginBottom: 16 }}>Yêu cầu</h2>
+              <div style={{ color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', lineHeight: 1.8 }}>
+                {job.yeuCau}
               </div>
             </div>
           </div>
 
-          <div className="space-y-6">
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-100 sticky top-6">
-              <h3 className="font-bold text-stone-900 mb-4">Job Details</h3>
-              <div className="space-y-4">
-                {job.salaryRange && (
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
-                      <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+            <div className="card" style={{ position: 'sticky', top: 100 }}>
+              <h3 style={{ fontSize: '1.1rem', marginBottom: 20 }}>Thông tin tuyển dụng</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                {(job.mucLuong || job.mucLuongToiDa) && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                    <div style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 10,
+                      background: 'rgba(61, 139, 95, 0.1)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      <svg width="20" height="20" fill="none" stroke="var(--success)" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </div>
                     <div>
-                      <p className="text-xs text-stone-400 uppercase">Salary</p>
-                      <p className="font-medium text-stone-800">{job.salaryRange}</p>
+                      <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Lương</p>
+                      <p style={{ fontWeight: 600 }}>{job.mucLuong ? `${Number(job.mucLuong).toLocaleString()} - ${job.mucLuongToiDa ? Number(job.mucLuongToiDa).toLocaleString() : ''}` : 'Thỏa thuận'}</p>
                     </div>
                   </div>
                 )}
 
-                {job.categoryId?.name && (
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
-                      <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {job.tenDanhMuc && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                    <div style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 10,
+                      background: 'var(--tertiary-dim)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      <svg width="20" height="20" fill="none" stroke="var(--tertiary)" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                       </svg>
                     </div>
                     <div>
-                      <p className="text-xs text-stone-400 uppercase">Category</p>
-                      <p className="font-medium text-stone-800">{job.categoryId.name}</p>
+                      <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Ngành nghề</p>
+                      <p style={{ fontWeight: 600 }}>{job.tenDanhMuc}</p>
                     </div>
                   </div>
                 )}
 
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <div style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 10,
+                    background: 'var(--accent-dim)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <svg width="20" height="20" fill="none" stroke="var(--accent)" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                   </div>
                   <div>
-                    <p className="text-xs text-stone-400 uppercase">Posted</p>
-                    <p className="font-medium text-stone-800">
-                      {new Date(job.createdAt).toLocaleDateString('vi-VN')}
-                    </p>
+                    <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Ngày đăng</p>
+                    <p style={{ fontWeight: 600 }}>{new Date(job.ngayTao).toLocaleDateString('vi-VN')}</p>
                   </div>
                 </div>
               </div>
 
-              {user?.role === 'CANDIDATE' && job.status === 'ACTIVE' && (
+              {user?.vaiTro === 'UNG_VIEN' && job.trangThai === 'ĐANG_TUYỂN' && (
                 <button
                   onClick={() => setShowApplyModal(true)}
-                  className="w-full mt-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl hover:from-amber-600 hover:to-orange-600 transition-all font-semibold shadow-lg shadow-amber-500/25"
+                  className="btn btn-primary"
+                  style={{ width: '100%', marginTop: 24, justifyContent: 'center' }}
                 >
-                  Apply Now
+                  Ứng tuyển ngay
                 </button>
               )}
 
               {!user && (
-                <button
-                  onClick={() => navigate('/login')}
-                  className="w-full mt-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl hover:from-amber-600 hover:to-orange-600 transition-all font-semibold shadow-lg shadow-amber-500/25"
+                <Link
+                  to="/login"
+                  className="btn btn-primary"
+                  style={{ width: '100%', marginTop: 24, justifyContent: 'center' }}
                 >
-                  Login to Apply
-                </button>
+                  Đăng nhập để ứng tuyển
+                </Link>
               )}
 
               {applySuccess && (
-                <div className="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
-                  <p className="text-emerald-700 font-medium text-center">Application submitted!</p>
+                <div className="success" style={{ marginTop: 16 }}>
+                  Đơn ứng tuyển đã được gửi thành công!
                 </div>
               )}
             </div>
 
-            {job.companyId && (
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-100">
-                <h3 className="font-bold text-stone-900 mb-4">About Company</h3>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-xl font-bold text-slate-400">
-                    {job.companyId.name?.[0] || 'C'}
+            {job.tenCongTy && (
+              <div className="card">
+                <h3 style={{ fontSize: '1.1rem', marginBottom: 20 }}>Về công ty</h3>
+                <div style={{ display: 'flex', gap: 14, marginBottom: 16, alignItems: 'center' }}>
+                  <div className="logo" style={{ width: 52, height: 52, fontSize: '1.4rem', marginBottom: 0 }}>
+                    {job.tenCongTy?.[0] || 'C'}
                   </div>
                   <div>
-                    <p className="font-medium text-stone-800">{job.companyId.name}</p>
-                    <p className="text-sm text-stone-500">{job.companyId.status}</p>
+                    <p style={{ fontWeight: 700 }}>{job.tenCongTy}</p>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{job.trangThai}</p>
                   </div>
                 </div>
-                {job.companyId.description && (
-                  <p className="text-sm text-stone-600 mb-4">{job.companyId.description}</p>
+                {job.moTaCongTy && (
+                  <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)', marginBottom: 16, lineHeight: 1.7 }}>
+                    {job.moTaCongTy}
+                  </p>
                 )}
-                {job.companyId.website && (
-                  <a href={job.companyId.website} target="_blank" rel="noopener noreferrer" className="text-amber-600 hover:text-amber-700 text-sm font-medium">
-                    Visit website →
+                {job.website && (
+                  <a
+                    href={job.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: 'var(--accent)', fontWeight: 600, fontSize: '0.92rem' }}
+                  >
+                    Truy cập website →
                   </a>
                 )}
               </div>
@@ -251,83 +304,122 @@ const JobDetailPage = () => {
       </div>
 
       {showApplyModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-stone-900">Apply for this job</h3>
-              <button onClick={() => setShowApplyModal(false)} className="text-stone-400 hover:text-stone-600">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: 24
+          }}
+          onClick={() => setShowApplyModal(false)}
+        >
+          <div
+            style={{
+              background: 'var(--bg-card)',
+              borderRadius: 24,
+              maxWidth: 480,
+              width: '100%',
+              padding: 36,
+              boxShadow: 'var(--shadow-lg)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
+              <h3 style={{ fontSize: '1.4rem' }}>Ứng tuyển vị trí này</h3>
+              <button
+                onClick={() => setShowApplyModal(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+              >
+                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-stone-700 mb-2">Upload your CV (PDF only)</label>
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileSelect}
-                  accept=".pdf"
-                  className="hidden"
-                />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploadingCV}
-                  className="w-full py-4 border-2 border-dashed border-stone-300 rounded-xl hover:border-amber-400 hover:bg-amber-50 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  {uploadingCV ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-stone-400 border-t-transparent rounded-full animate-spin" />
-                      Uploading...
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-6 h-6 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                      </svg>
-                      {cvFile ? 'Change file' : 'Click to upload CV'}
-                    </>
-                  )}
-                </button>
-                {cvFile && (
-                  <p className="mt-2 text-sm text-emerald-600 flex items-center gap-1">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            <div style={{ marginBottom: 24 }}>
+              <label style={{ display: 'block', fontWeight: 600, marginBottom: 12, fontSize: '0.92rem' }}>
+                Tải lên CV của bạn (PDF)
+              </label>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileSelect}
+                accept=".pdf"
+                style={{ display: 'none' }}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingCV}
+                style={{
+                  width: '100%',
+                  padding: 24,
+                  border: '2px dashed var(--border)',
+                  borderRadius: 14,
+                  background: 'transparent',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 10,
+                  color: 'var(--text-secondary)',
+                  fontSize: '0.95rem',
+                  transition: 'all 0.2s',
+                  opacity: uploadingCV ? 0.5 : 1
+                }}
+              >
+                {uploadingCV ? (
+                  <>
+                    <span className="loading" style={{ marginRight: 8, minHeight: 20 }} />
+                    Đang tải lên...
+                  </>
+                ) : (
+                  <>
+                    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                     </svg>
-                    {cvFile.name}
-                  </p>
+                    {cvFile ? 'Đổi file' : 'Nhấn để tải CV'}
+                  </>
                 )}
-              </div>
-
-              {applyError && (
-                <p className="text-red-500 text-sm">{applyError}</p>
+              </button>
+              {cvFile && (
+                <p style={{ marginTop: 12, color: 'var(--success)', fontSize: '0.88rem', fontWeight: 600 }}>
+                  ✓ {cvFile.name}
+                </p>
               )}
+            </div>
 
-              <div className="flex gap-3 pt-4">
-                <button
-                  onClick={() => setShowApplyModal(false)}
-                  className="flex-1 py-3 border border-stone-200 text-stone-600 rounded-xl hover:bg-stone-50 transition-colors font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleApply}
-                  disabled={applying || !cvFile}
-                  className="flex-1 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl hover:from-amber-600 hover:to-orange-600 transition-all font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {applying ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Applying...
-                    </>
-                  ) : (
-                    'Submit Application'
-                  )}
-                </button>
-              </div>
+            {applyError && (
+              <div className="error" style={{ marginBottom: 20 }}>{applyError}</div>
+            )}
+
+            <div style={{ display: 'flex', gap: 14 }}>
+              <button
+                onClick={() => setShowApplyModal(false)}
+                className="btn btn-secondary"
+                style={{ flex: 1, justifyContent: 'center' }}
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleApply}
+                disabled={applying || !cvFile}
+                className="btn btn-primary"
+                style={{ flex: 1, justifyContent: 'center', opacity: (!cvFile || applying) ? 0.5 : 1 }}
+              >
+                {applying ? (
+                  <>
+                    <span className="loading" style={{ marginRight: 8, minHeight: 20 }} />
+                    Đang gửi...
+                  </>
+                ) : (
+                  'Gửi đơn ứng tuyển'
+                )}
+              </button>
             </div>
           </div>
         </div>
